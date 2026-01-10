@@ -26,6 +26,8 @@ export default defineConfig({
         '@shared': './src/shared',
     },
 
+    templatesDir: './.fsd-templates',
+
     /**
      * How strict the generator should be about enforcing FSD naming conventions.
      * - 'error': Fail if naming is incorrect.

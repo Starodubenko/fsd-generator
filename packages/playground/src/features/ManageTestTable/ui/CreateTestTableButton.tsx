@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { useCreateTestTable } from '../../../entities/TestTable/api';
+import { useCreateTestTable } from '@entities/TestTable/ui';
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
@@ -23,7 +23,7 @@ const Button = styled.button`
 export const CreateTestTableButton = () => {
   const { mutate, isLoading } = useCreateTestTable();
   return (
-    <Button onClick={() => mutate({ /* mock data */ } as any)} disabled={isLoading}>
+    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<TestTable, 'id'>)} disabled={isLoading}>
       {isLoading ? 'Creating...' : 'Create TestTable'}
     </Button>
   );

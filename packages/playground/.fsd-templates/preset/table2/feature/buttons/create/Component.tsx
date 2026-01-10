@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { useUpdateTestTable } from '@entities/TestTable/ui';
+import { useCreate{{baseName}} } from '{{apiImportPath}}';
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
@@ -20,12 +20,11 @@ const Button = styled.button`
   }
 `;
 
-export const EditTestTableButton = ({ id }: { id: string }) => {
-  const { mutate, isLoading } = useUpdateTestTable();
+export const {{componentName}} = () => {
+  const { mutate, isLoading } = useCreate{{baseName}}();
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Button onClick={() => mutate({ id, data: {} } as any)} disabled={isLoading}>
-      {isLoading ? 'Editing...' : 'Edit'}
+    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<{{baseName}}, 'id'>)} disabled={isLoading}>
+      {isLoading ? 'Creating...' : 'Create {{baseName}}'}
     </Button>
   );
 };

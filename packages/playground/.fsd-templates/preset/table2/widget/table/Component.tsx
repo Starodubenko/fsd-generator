@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
-import { mockTestTableData } from '@entities/TestTable/model/types';
-import { CreateTestTableButton, EditTestTableButton, DeleteTestTableButton } from '@features/ManageTestTable/ui';
+import { mock{{baseName}}Data } from '{{entityImportPath}}/model/types';
+import { Create{{baseName}}Button, Edit{{baseName}}Button, Delete{{baseName}}Button } from '{{featureImportPath}}/ui';
 
 const TableWrapper = styled.div`
   border: 1px solid #eee;
@@ -18,11 +18,11 @@ const Table = styled.table`
   }
 `;
 
-export const TestTableTable = () => {
+export const {{componentName}} = () => {
   return (
     <TableWrapper>
         <div style={{ marginBottom: '1rem' }}>
-        <CreateTestTableButton />
+        <Create{{baseName}}Button />
       </div>
       <Table>
         <thead>
@@ -33,13 +33,13 @@ export const TestTableTable = () => {
           </tr>
         </thead>
         <tbody>
-          {mockTestTableData.map((item) => (
+          {mock{{baseName}}Data.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.name}</td>
               <td>
-                <EditTestTableButton id={item.id} />
-                <DeleteTestTableButton id={item.id} />
+                <Edit{{baseName}}Button id={item.id} />
+                <Delete{{baseName}}Button id={item.id} />
               </td>
             </tr>
           ))}

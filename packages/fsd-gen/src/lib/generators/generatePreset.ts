@@ -1,13 +1,121 @@
-import { join } from 'path';
-import { writeFile, mkdir, readFile } from 'fs/promises';
+import { join, resolve, dirname } from 'path';
+import { writeFile, mkdir, readFile, stat } from 'fs/promises';
+import { fileURLToPath } from 'url';
+import { createJiti } from 'jiti';
 import { generateComponent } from './generate.js';
 import { loadConfig } from '../config/loadConfig.js';
 import { resolveFsdPaths } from '../naming/resolvePaths.js';
+import { PresetConfig } from '../../config/types.js';
+
 import { processTemplate } from '../templates/templateLoader.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export async function generatePreset(presetName: string, name: string) {
     console.log(`Generating preset '${presetName}' for '${name}'...`);
     const config = await loadConfig();
+    const templatesDir = config.templatesDir ? resolve(process.cwd(), config.templatesDir) : undefined;
+
+    const { resolvePresetDir, processTemplate } = await import('../templates/templateLoader.js');
+    const presetDir = await resolvePresetDir(presetName, templatesDir);
+
+
+    if (presetDir) {
+        let presetConfig: PresetConfig | null = null;
+
+        // 1. Try preset.ts
+        const presetTsPath = join(presetDir, 'preset.ts');
+        try {
+            await stat(presetTsPath);
+            console.log(`Loading preset configuration from ${presetTsPath}...`);
+            const jiti = createJiti(import.meta.url);
+            // When importing preset.ts, we need to handle potential default export
+            const imported = await jiti.import(presetTsPath, { default: true }) as any;
+            presetConfig = imported.default || imported;
+        } catch (e) {
+            console.error('Error loading preset.ts:', e);
+        }
+
+        // 2. Try preset.json if TS failed/missing
+        if (!presetConfig) {
+            const presetJsonPath = join(presetDir, 'preset.json');
+            try {
+                const presetConfigContent = await readFile(presetJsonPath, 'utf-8');
+                presetConfig = JSON.parse(presetConfigContent);
+                console.log(`Found preset.json at ${presetJsonPath}, executing actions...`);
+            } catch (e) {
+                // Ignore
+            }
+        }
+
+        if (typeof presetConfig === 'function') {
+            presetConfig = (presetConfig as any)({ name, config });
+        }
+
+
+        if (presetConfig) {
+            // Execute actions
+            if (presetConfig.actions && Array.isArray(presetConfig.actions)) {
+
+                const globalVars = presetConfig.variables || {};
+
+                for (const action of presetConfig.actions) {
+                    const variables = { name, componentName: name, ...globalVars, ...action.variables };
+
+
+                    if (action.type === 'component') {
+                        await generateComponent({
+                            ...resolveFsdPaths(config.rootDir!, action.layer, processTemplate(action.slice, variables), processTemplate(action.name || action.slice, variables)),
+                        }, {
+                            ...variables, // Pass all variables first
+                            componentName: processTemplate(action.name || action.slice, variables),
+                            sliceName: processTemplate(action.slice, variables),
+                            layer: action.layer,
+                        }, action.template, config.templatesDir);
+                    } else if (action.type === 'file') {
+
+                        // Handle raw file creation (e.g. model/types.ts)
+                        const targetPath = join(process.cwd(), config.rootDir!, processTemplate(action.path, variables));
+                        await mkdir(join(targetPath, '..'), { recursive: true });
+
+                        // Resolve template path from templatesDir (consistent with component resolution)
+                        if (action.template) {
+                            const templatesDir = config.templatesDir ? resolve(process.cwd(), config.templatesDir) : undefined;
+                            const pathsToCheck = [];
+
+                            if (templatesDir) {
+                                pathsToCheck.push(join(templatesDir, action.template));
+                            }
+                            // Fallback to internal templates if needed
+                            const internalTemplatesDir = join(__dirname, '../../../templates');
+                            pathsToCheck.push(join(internalTemplatesDir, action.template));
+
+                            let content = '';
+                            for (const p of pathsToCheck) {
+                                try {
+                                    content = await readFile(p, 'utf-8');
+                                    console.log(`Loaded file template from: ${p}`);
+                                    break;
+                                } catch { }
+                            }
+
+                            if (!content) {
+                                console.warn(`Could not find file template: ${action.template}`);
+                                continue;
+                            }
+
+                            const processed = processTemplate(content, variables);
+                            await writeFile(targetPath, processed);
+                            console.log(`Created ${targetPath}`);
+                        }
+                    }
+                }
+                console.log('Preset generation complete (declarative).');
+                return;
+            }
+        }
+    }
 
     if (presetName === 'table') {
         // 1. Entity Model (Manual)
@@ -36,7 +144,7 @@ export const mock{{componentName}}Data: {{componentName}}[] = [
             componentName: name,
             sliceName: name,
             layer: 'entity',
-        }, 'preset/table/entity/ui');
+        }, 'preset/table/entity/ui', config.templatesDir);
 
         // 1c. Entity API (Hooks)
         const hooks = [
@@ -57,20 +165,7 @@ export const mock{{componentName}}Data: {{componentName}}[] = [
                 componentName: name,
                 sliceName: name,
                 layer: 'entity',
-            }, `preset/table/entity/api/${hook.type}`);
-        }
-
-        // Update Entity index.ts to export api
-        const entityIndex = join(entityPaths.slicePath, 'index.ts');
-        try {
-            let indexContent = await readFile(entityIndex, 'utf-8');
-            if (!indexContent.includes(`export * from './api`)) {
-                indexContent += `export * from './api';\n`;
-                await writeFile(entityIndex, indexContent);
-            }
-        } catch (e) {
-            // Ignore if index doesn't exist yet (generateComponent should create it but maybe race condition)
-            await writeFile(entityIndex, `export * from './api';\n`);
+            }, `preset/table/entity/api/${hook.type}`, config.templatesDir);
         }
 
         // 2. Feature (Manage<Name> Buttons)
@@ -95,7 +190,7 @@ export const mock{{componentName}}Data: {{componentName}}[] = [
                 layer: 'feature',
                 /* @ts-ignore */
                 apiImportPath
-            }, `preset/table/feature/buttons/${btn.type}`);
+            }, `preset/table/feature/buttons/${btn.type}`, config.templatesDir);
         }
 
         // 3. Widget (<Name>Table)
@@ -119,7 +214,7 @@ export const mock{{componentName}}Data: {{componentName}}[] = [
             entityImportPath,
             /* @ts-ignore */
             featureImportPath
-        }, 'preset/table/widget/table');
+        }, 'preset/table/widget/table', config.templatesDir);
 
         // 4. Page (<Name>Page)
         const pageName = `${name}Page`;
@@ -134,7 +229,7 @@ export const mock{{componentName}}Data: {{componentName}}[] = [
             layer: 'page',
             /* @ts-ignore */
             widgetImportPath
-        }, 'preset/table/page/page');
+        }, 'preset/table/page/page', config.templatesDir);
 
         // 5. Routing
         const appPath = join(process.cwd(), config.rootDir!, 'App.tsx');

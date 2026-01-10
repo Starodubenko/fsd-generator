@@ -68,8 +68,16 @@ program
     .description('Generate a full vertical slice using a preset')
     .action(async (presetName, name) => {
         try {
+            // Load config to get templatesDir
+            const { loadConfig } = await import('./dist/lib/config/loadConfig.js');
+            const config = await loadConfig();
+
             if (!presetName || !name) {
                 const inquirer = (await import('inquirer')).default;
+                const { listPresets } = await import('./dist/lib/templates/templateLoader.js');
+
+                const availablePresets = await listPresets(config.templatesDir);
+
                 const questions = [];
 
                 if (!presetName) {
@@ -77,7 +85,7 @@ program
                         type: 'list',
                         name: 'presetName',
                         message: 'Select a preset:',
-                        choices: ['table']
+                        choices: availablePresets.length > 0 ? availablePresets : ['table']
                     });
                 }
 

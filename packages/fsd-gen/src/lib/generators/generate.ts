@@ -10,10 +10,14 @@ export interface TemplateContext {
   layer: string;
 }
 
+import { loadConfig } from '../config/loadConfig.js';
+// ... imports
+
 export async function generateComponent(
   paths: FsdPaths,
   context: TemplateContext,
-  templateOverride?: string
+  templateOverride?: string,
+  templatesDir?: string // New optional arg
 ) {
   // Determine template type based on layer
   const defaultTemplates: Record<string, string> = {
@@ -31,7 +35,18 @@ export async function generateComponent(
 
   console.log(`Using template: ${templateOverride ? templatePath : context.layer + '/' + templatePath}`);
 
-  const { component, styles } = await loadTemplate(layerArg, templatePath);
+  // Fetch config if templatesDir not provided? 
+  // Optimization: Caller should provide it.
+  // But for backward compat/direct calls, we can try to load config here if missing.
+  // However, avoid double loading.
+
+  let effectiveTemplatesDir = templatesDir;
+  if (!effectiveTemplatesDir) {
+    const config = await loadConfig();
+    effectiveTemplatesDir = config.templatesDir;
+  }
+
+  const { component, styles } = await loadTemplate(layerArg, templatePath, effectiveTemplatesDir);
 
   const variables = {
     ...context,
@@ -53,7 +68,6 @@ export async function generateComponent(
   }
   console.log(`Created ${componentFile}`);
 
-  // Update barrels
   // Update barrels
   const exportName = basename(paths.componentPath);
   updateBarrel(paths.uiPath, context.componentName, exportName);
