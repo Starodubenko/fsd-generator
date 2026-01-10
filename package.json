@@ -1,0 +1,13 @@
+{
+  "name": "fsd-generator-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "playground": "npm run dev --workspace=playground-app",
+    "gen": "npm run gen --workspace=playground-app --"
+  }
+}
