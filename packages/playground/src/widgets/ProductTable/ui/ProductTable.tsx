@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
-import { mockTestTableData } from '@entities/TestTable/model/types';
-import { CreateTestTableButton, EditTestTableButton, DeleteTestTableButton } from '@features/ManageTestTable/ui';
+import { useGetProducts } from '@entities/Product/ui';
+import { CreateProductButton, EditProductButton, DeleteProductButton } from '@features/ManageProduct/ui';
 
 const TableWrapper = styled.div`
   border: 1px solid #eee;
@@ -18,11 +18,16 @@ const Table = styled.table`
   }
 `;
 
-export const TestTableTable = () => {
+export const ProductTable = () => {
+  const { data, isLoading, error } = useGetProducts();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
+
   return (
     <TableWrapper>
         <div style={{ marginBottom: '1rem' }}>
-        <CreateTestTableButton />
+        <CreateProductButton />
       </div>
       <Table>
         <thead>
@@ -33,13 +38,13 @@ export const TestTableTable = () => {
           </tr>
         </thead>
         <tbody>
-          {mockTestTableData.map((item) => (
+          {data.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.name}</td>
               <td>
-                <EditTestTableButton id={item.id} />
-                <DeleteTestTableButton id={item.id} />
+                <EditProductButton id={item.id} />
+                <DeleteProductButton id={item.id} />
               </td>
             </tr>
           ))}

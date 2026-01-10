@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { {{widgetName}} } from '{{widgetImportPath}}/ui/{{widgetName}}';
+import { {{widgetSlice}} } from '{{widgetImportPath}}/ui/';
 
 const PageWrapper = styled.div`
   padding: 2rem;
@@ -12,8 +12,8 @@ const Title = styled.h1`
 export const {{componentName}} = () => {
   return (
     <PageWrapper>
-      <Title>{{componentName}} Management</Title>
-      <{{widgetName}} />
+      <Title>{{baseName}} Management</Title>
+      <{{widgetSlice}} />
     </PageWrapper>
   );
 };

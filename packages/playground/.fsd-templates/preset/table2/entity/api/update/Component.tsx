@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { {{baseName}} } from '../model/types';
+import type { {{baseName}} } from '../model/model';
 
 // Mock API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

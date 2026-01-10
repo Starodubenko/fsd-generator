@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import type { {{baseName}} } from '../model/types';
-import { mock{{baseName}}Data } from '../model/types';
+import type { {{baseName}} } from '../model/model';
+import { mock{{baseName}}Data } from '../model/model';
 
 // Mock API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

@@ -1,4 +1,5 @@
 import styled from '@emotion/styled';
+import type { {{baseName}} } from '{{entityImportPath}}/model/model';
 import { useUpdate{{baseName}} } from '{{apiImportPath}}';
 
 const Button = styled.button`
@@ -23,8 +24,7 @@ const Button = styled.button`
 export const {{componentName}} = ({ id }: { id: string }) => {
   const { mutate, isLoading } = useUpdate{{baseName}}();
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Button onClick={() => mutate({ id, data: {} } as any)} disabled={isLoading}>
+    <Button onClick={() => mutate({ id, ...{ name: 'Updated' } } as Partial<{{baseName}}>)} disabled={isLoading}>
       {isLoading ? 'Editing...' : 'Edit'}
     </Button>
   );

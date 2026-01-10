@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
-import { useCreateTestTable } from '@entities/TestTable/ui';
+import type { Product } from '@entities/Product/model/model';
+import { useCreateProduct } from '@entities/Product/ui';
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
@@ -20,11 +21,11 @@ const Button = styled.button`
   }
 `;
 
-export const CreateTestTableButton = () => {
-  const { mutate, isLoading } = useCreateTestTable();
+export const CreateProductButton = () => {
+  const { mutate, isLoading } = useCreateProduct();
   return (
-    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<TestTable, 'id'>)} disabled={isLoading}>
-      {isLoading ? 'Creating...' : 'Create TestTable'}
+    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<Product, 'id'>)} disabled={isLoading}>
+      {isLoading ? 'Creating...' : 'Create Product'}
     </Button>
   );
 };

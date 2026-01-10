@@ -55,14 +55,50 @@ export interface PresetFileAction extends PresetActionBase {
 
 export type PresetAction = PresetComponentAction | PresetFileAction;
 
-export interface PresetConfig {
-    variables?: Record<string, string>;
-    actions: PresetAction[];
+export interface ConventionConfig {
+    /** Prefix for feature slice names (e.g., 'Manage' -> 'ManageUser') */
+    featureSlicePrefix?: string;
+    /** Suffix for widget slice names (e.g., 'Table' -> 'UserTable') */
+    widgetSliceSuffix?: string;
+    /** Suffix for page slice names (e.g., 'Page' -> 'UserPage') */
+    pageSliceSuffix?: string;
 }
 
+export interface RouteConfig {
+    /** Route path (e.g., '/users', '/products/:id') */
+    path: string;
+    /** Import path for the page component (will be auto-generated if not provided) */
+    importPath?: string;
+    /** Component name (will be auto-generated from entity name if not provided) */
+    componentName?: string;
+}
 
-export type PresetConfigFn = (args: { name: string; config: FsdGenConfig }) => PresetConfig;
+export interface PresetConfig {
+    /** Optional discovery mode ('auto' = scan directories, 'manual' = use actions array) */
+    discoveryMode?: 'auto' | 'manual';
+    /** Global variables available in all templates */
+    variables?: Record<string, string>;
+    /** Manual action definitions (required when discoveryMode is 'manual' or undefined) */
+    actions?: PresetAction[];
+    /** Convention overrides for auto-discovery mode */
+    conventions?: ConventionConfig;
+    /** Route configuration for automatic route generation */
+    routing?: RouteConfig;
+}
 
+/** Arguments passed to preset configuration function */
+export interface PresetConfigArgs {
+    /** The entity name provided by the user (e.g., 'User', 'Product') */
+    name: string;
+    /** The loaded FSD generator configuration */
+    config: FsdGenConfig;
+}
+
+export type PresetConfigFn = (args: PresetConfigArgs) => PresetConfig;
+
+// Overloaded signatures for better type inference
+export function definePreset(config: PresetConfig): PresetConfig;
+export function definePreset(config: PresetConfigFn): PresetConfigFn;
 export function definePreset(config: PresetConfig | PresetConfigFn): PresetConfig | PresetConfigFn {
     return config;
 }

@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import type { {{componentName}} as {{componentName}}Type } from '../model/types';
+import type { {{componentName}} as {{componentName}}Type } from '../model/model';
 
 const Root = styled.div`
     padding: 10px;

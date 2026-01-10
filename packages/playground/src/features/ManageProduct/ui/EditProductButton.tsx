@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
-import { useUpdateTestTable } from '@entities/TestTable/ui';
+import type { Product } from '@entities/Product/model/model';
+import { useUpdateProduct } from '@entities/Product/ui';
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
@@ -20,11 +21,10 @@ const Button = styled.button`
   }
 `;
 
-export const EditTestTableButton = ({ id }: { id: string }) => {
-  const { mutate, isLoading } = useUpdateTestTable();
+export const EditProductButton = ({ id }: { id: string }) => {
+  const { mutate, isLoading } = useUpdateProduct();
   return (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <Button onClick={() => mutate({ id, data: {} } as any)} disabled={isLoading}>
+    <Button onClick={() => mutate({ id, ...{ name: 'Updated' } } as Partial<Product>)} disabled={isLoading}>
       {isLoading ? 'Editing...' : 'Edit'}
     </Button>
   );

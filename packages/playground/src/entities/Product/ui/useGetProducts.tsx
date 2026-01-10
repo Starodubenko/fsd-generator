@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { TestTable } from '../model/types';
-import { mockTestTableData } from '../model/types';
+import type { Product } from '../model/model';
+import { mockProductData } from '../model/model';
 
 // Mock API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export function useGetTestTables() {
-  const [data, setData] = useState<TestTable[]>([]);
+export function useGetProducts() {
+  const [data, setData] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -17,7 +17,7 @@ export function useGetTestTables() {
       setIsLoading(true);
       try {
         await delay(500);
-        if (mounted) setData(mockTestTableData);
+        if (mounted) setData(mockProductData);
       } catch (e) {
         if (mounted) setError(e as Error);
       } finally {

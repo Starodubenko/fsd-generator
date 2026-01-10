@@ -1,16 +1,153 @@
 import { join, resolve, dirname } from 'path';
-import { writeFile, mkdir, readFile, stat } from 'fs/promises';
+import { writeFile, mkdir, readFile, stat, readdir } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { createJiti } from 'jiti';
 import { generateComponent } from './generate.js';
 import { loadConfig } from '../config/loadConfig.js';
 import { resolveFsdPaths } from '../naming/resolvePaths.js';
-import { PresetConfig } from '../../config/types.js';
+import { PresetConfig, PresetAction, ConventionConfig } from '../../config/types.js';
+import { injectRoute } from '../routing/injectRoute.js';
 
 import { processTemplate } from '../templates/templateLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/**
+ * Auto-discover templates in a preset directory based on conventions
+ */
+async function discoverTemplates(
+    presetDir: string,
+    presetName: string,
+    entityName: string,
+    conventions: ConventionConfig = {}
+): Promise<PresetAction[]> {
+    const actions: PresetAction[] = [];
+
+    // Default conventions
+    const featurePrefix = conventions.featureSlicePrefix ?? 'Manage';
+    const widgetSuffix = conventions.widgetSliceSuffix ?? 'Table';
+    const pageSuffix = conventions.pageSliceSuffix ?? 'Page';
+
+    // Scan for layer directories
+    const layers = ['entity', 'feature', 'widget', 'page'] as const;
+
+    for (const layer of layers) {
+        const layerDir = join(presetDir, layer);
+        try {
+            const layerStat = await stat(layerDir);
+            if (!layerStat.isDirectory()) continue;
+
+            const entries = await readdir(layerDir, { withFileTypes: true });
+
+            for (const entry of entries) {
+                const fullPath = join(layerDir, entry.name);
+
+                // Check for .ts files (file actions)
+                if (entry.isFile() && entry.name.endsWith('.ts')) {
+                    const baseName = entry.name.replace('.ts', '');
+                    const layerPlural = layer === 'entity' ? 'entities' : layer === 'feature' ? 'features' : layer === 'widget' ? 'widgets' : 'pages';
+                    actions.push({
+                        type: 'file',
+                        path: `${layerPlural}/${entityName}/model/${baseName}.ts`,
+                        template: `preset/${presetName}/${layer}/${entry.name}`
+                    });
+                }
+
+                // Check for directories (component actions)
+                if (entry.isDirectory()) {
+                    const templatePath = `preset/${presetName}/${layer}/${entry.name}`;
+
+                    // Entity layer
+                    if (layer === 'entity') {
+                        if (entry.name === 'ui') {
+                            actions.push({
+                                type: 'component',
+                                layer: 'entity',
+                                slice: entityName,
+                                name: entityName,
+                                template: templatePath
+                            });
+                        } else if (entry.name === 'api') {
+                            // Scan api subdirectories
+                            const apiDir = fullPath;
+                            const apiEntries = await readdir(apiDir, { withFileTypes: true });
+                            for (const apiEntry of apiEntries) {
+                                if (apiEntry.isDirectory()) {
+                                    const hookName = apiEntry.name;
+                                    const nameMap: Record<string, string> = {
+                                        'get': `useGet${entityName}s`,
+                                        'create': `useCreate${entityName}`,
+                                        'update': `useUpdate${entityName}`,
+                                        'delete': `useDelete${entityName}`
+                                    };
+                                    actions.push({
+                                        type: 'component',
+                                        layer: 'entity',
+                                        slice: entityName,
+                                        name: nameMap[hookName] || `use${hookName.charAt(0).toUpperCase() + hookName.slice(1)}${entityName}`,
+                                        template: `${templatePath}/${apiEntry.name}`
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Feature layer
+                    else if (layer === 'feature') {
+                        if (entry.name === 'buttons') {
+                            const buttonsDir = fullPath;
+                            const buttonEntries = await readdir(buttonsDir, { withFileTypes: true });
+                            for (const buttonEntry of buttonEntries) {
+                                if (buttonEntry.isDirectory()) {
+                                    const buttonType = buttonEntry.name; // create, edit, delete
+                                    const capitalizedType = buttonType.charAt(0).toUpperCase() + buttonType.slice(1);
+                                    actions.push({
+                                        type: 'component',
+                                        layer: 'feature',
+                                        slice: `${featurePrefix}${entityName}`,
+                                        name: `${capitalizedType}${entityName}Button`,
+                                        template: `${templatePath}/${buttonEntry.name}`
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Widget layer
+                    else if (layer === 'widget') {
+                        if (entry.name === 'table') {
+                            actions.push({
+                                type: 'component',
+                                layer: 'widget',
+                                slice: `${entityName}${widgetSuffix}`,
+                                name: `${entityName}${widgetSuffix}`,
+                                template: templatePath
+                            });
+                        }
+                    }
+
+                    // Page layer
+                    else if (layer === 'page') {
+                        if (entry.name === 'page') {
+                            actions.push({
+                                type: 'component',
+                                layer: 'page',
+                                slice: `${entityName}${pageSuffix}`,
+                                name: `${entityName}${pageSuffix}`,
+                                template: templatePath
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Layer directory doesn't exist, skip
+        }
+    }
+
+    return actions;
+}
 
 export async function generatePreset(presetName: string, name: string) {
     console.log(`Generating preset '${presetName}' for '${name}'...`);
@@ -55,12 +192,26 @@ export async function generatePreset(presetName: string, name: string) {
 
 
         if (presetConfig) {
-            // Execute actions
-            if (presetConfig.actions && Array.isArray(presetConfig.actions)) {
+            const globalVars = presetConfig.variables || {};
+            let actions = presetConfig.actions || [];
 
-                const globalVars = presetConfig.variables || {};
+            // Auto-discovery mode: scan preset directory for templates
+            if (presetConfig.discoveryMode === 'auto') {
+                console.log('Auto-discovering templates...');
+                const discoveredActions = await discoverTemplates(
+                    presetDir,
+                    presetName,
+                    name,
+                    presetConfig.conventions
+                );
+                console.log(`Found ${discoveredActions.length} templates`);
+                actions = discoveredActions;
+            }
 
-                for (const action of presetConfig.actions) {
+            // Execute actions (from manual config or auto-discovery)
+            if (actions && Array.isArray(actions) && actions.length > 0) {
+
+                for (const action of actions) {
                     const variables = { name, componentName: name, ...globalVars, ...action.variables };
 
 
@@ -112,6 +263,38 @@ export async function generatePreset(presetName: string, name: string) {
                     }
                 }
                 console.log('Preset generation complete (declarative).');
+
+                // Handle route injection if routing config is provided
+                if (presetConfig.routing) {
+                    // Check if any page was generated
+                    const hasPageAction = actions.some(action =>
+                        action.type === 'component' && action.layer === 'page'
+                    );
+
+                    if (!hasPageAction) {
+                        console.warn('⚠️  Warning: Routing config provided but no page template found');
+                    } else {
+                        // Determine page slice name and component name
+                        const pageAction = actions.find(action =>
+                            action.type === 'component' && action.layer === 'page'
+                        );
+
+                        if (pageAction && pageAction.type === 'component') {
+                            const pageSlice = processTemplate(pageAction.slice, { name, componentName: name, ...globalVars });
+                            const componentName = presetConfig.routing.componentName ||
+                                processTemplate(pageAction.name || pageAction.slice, { name, componentName: name, ...globalVars });
+                            const importPath = presetConfig.routing.importPath || `@pages/${pageSlice}`;
+
+                            await injectRoute({
+                                rootDir: config.rootDir || 'src',
+                                path: presetConfig.routing.path,
+                                importPath,
+                                componentName
+                            });
+                        }
+                    }
+                }
+
                 return;
             }
         }

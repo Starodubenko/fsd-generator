@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { ProductPage } from '@pages/ProductPage';
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<h1>Home</h1>} />
+            <Route path="/product" element={<ProductPage />} />
             {/* ROUTES_INJECTION_POINT */}
           </Routes>
         </main>

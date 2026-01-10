@@ -1,4 +1,5 @@
 import styled from '@emotion/styled';
+import type { {{baseName}} } from '{{entityImportPath}}/model/model';
 import { useCreate{{baseName}} } from '{{apiImportPath}}';
 
 const Button = styled.button`

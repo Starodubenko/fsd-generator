@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { useDeleteTestTable } from '@entities/TestTable/ui';
+import { useDeleteProduct } from '@entities/Product/ui';
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
@@ -20,8 +20,8 @@ const Button = styled.button`
   }
 `;
 
-export const DeleteTestTableButton = ({ id }: { id: string }) => {
-  const { mutate, isLoading } = useDeleteTestTable();
+export const DeleteProductButton = ({ id }: { id: string }) => {
+  const { mutate, isLoading } = useDeleteProduct();
   return (
     <Button onClick={() => mutate(id)} disabled={isLoading}>
       {isLoading ? 'Deleting...' : 'Delete'}

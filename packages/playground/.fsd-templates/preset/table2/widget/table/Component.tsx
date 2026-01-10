@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { mock{{baseName}}Data } from '{{entityImportPath}}/model/types';
+import { useGet{{baseName}}s } from '{{entityImportPath}}/ui';
 import { Create{{baseName}}Button, Edit{{baseName}}Button, Delete{{baseName}}Button } from '{{featureImportPath}}/ui';
 
 const TableWrapper = styled.div`
@@ -19,6 +19,11 @@ const Table = styled.table`
 `;
 
 export const {{componentName}} = () => {
+  const { data, isLoading, error } = useGet{{baseName}}s();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
+
   return (
     <TableWrapper>
         <div style={{ marginBottom: '1rem' }}>
@@ -33,7 +38,7 @@ export const {{componentName}} = () => {
           </tr>
         </thead>
         <tbody>
-          {mock{{baseName}}Data.map((item) => (
+          {data.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.name}</td>
