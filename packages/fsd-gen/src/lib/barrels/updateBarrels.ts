@@ -1,4 +1,4 @@
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 export function updateBarrel(directory: string, exportName: string, exportPath: string) {

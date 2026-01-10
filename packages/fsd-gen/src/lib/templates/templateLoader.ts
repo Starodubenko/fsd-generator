@@ -5,67 +5,88 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Assuming templates are in root/templates
-// Code is in dist/lib/templates/loadTemplate.js (compiled)
-// Root is ../../../
-// Or ../../../../ if we are in dist/lib/templates
-// Let's resolve relative to package root.
-
-// NOTE: When running locally, __dirname is .../dist/lib/templates
-// templates dir is .../templates (in root)
-
-export async function loadTemplate(
-    layer: string,
-    type: string = 'ui',
-    customTemplatesDir?: string
-): Promise<{ component: string; styles: string }> {
+/**
+ * Resolve the list of directories to search for templates
+ * Custom directory is checked first, then internal templates
+ */
+export function resolveTemplateDirs(customTemplatesDir?: string): string[] {
     const internalTemplatesDir = join(__dirname, '../../../templates');
 
-    // Default search path: just the internal one
-    let searchDirs = [internalTemplatesDir];
-
-    // If custom directory provided, check it FIRST
     if (customTemplatesDir) {
-        // Resolve absolute path if needed, but assuming caller passes absolute or correct relative
-        // For CLI generic usage, best if caller resolves it to absolute keying off config location.
-        // Let's assume absolute path passed for safety, or we resolve relative to cwd?
-        // generate.ts -> will likely pass resolved path.
-        searchDirs = [customTemplatesDir, internalTemplatesDir];
+        return [customTemplatesDir, internalTemplatesDir];
     }
 
-    // Attempt to find template in searchDirs
+    return [internalTemplatesDir];
+}
+
+/**
+ * Find the template directory in the search directories
+ * @returns The path to the template directory or null if not found
+ */
+export async function findTemplateDir(
+    layer: string,
+    type: string,
+    searchDirs: string[]
+): Promise<string | null> {
     for (const templatesDir of searchDirs) {
         const templateDir = layer
             ? join(templatesDir, layer, type)
             : join(templatesDir, type);
 
-        const componentPath = join(templateDir, 'Component.tsx');
-
-        // Check existence quickly? readFile throws if not found
-        // We can just try/catch
         try {
-            const component = await readFile(componentPath, 'utf-8');
-
-            // If component found, try styles
-            const stylesPath = join(templateDir, 'Component.styles.ts');
-            let styles = '';
-            try {
-                styles = await readFile(stylesPath, 'utf-8');
-            } catch {
-                styles = '';
-            }
-
-            console.log(`Loaded template from: ${templateDir}`);
-            return { component, styles };
-
-        } catch (e) {
+            await stat(templateDir);
+            return templateDir;
+        } catch {
             // Not found in this dir, continue
         }
     }
 
-    // If we reach here, found nothing
-    console.warn(`Template not found: ${layer}/${type} in paths: ${searchDirs.join(', ')}`);
-    throw new Error(`Template not found: ${layer}/${type}`);
+    return null;
+}
+
+/**
+ * Read the component template file
+ */
+export async function readComponentTemplate(templateDir: string): Promise<string> {
+    const componentPath = join(templateDir, 'Component.tsx');
+    return await readFile(componentPath, 'utf-8');
+}
+
+/**
+ * Read the styles template file (optional)
+ * @returns The styles content or empty string if not found
+ */
+export async function readStylesTemplate(templateDir: string): Promise<string> {
+    const stylesPath = join(templateDir, 'Component.styles.ts');
+    try {
+        return await readFile(stylesPath, 'utf-8');
+    } catch {
+        return '';
+    }
+}
+
+/**
+ * Load a template for a given layer and type
+ * Orchestrates finding and reading template files
+ */
+export async function loadTemplate(
+    layer: string,
+    type: string = 'ui',
+    customTemplatesDir?: string
+): Promise<{ component: string; styles: string }> {
+    const searchDirs = resolveTemplateDirs(customTemplatesDir);
+    const templateDir = await findTemplateDir(layer, type, searchDirs);
+
+    if (!templateDir) {
+        console.warn(`Template not found: ${layer}/${type} in paths: ${searchDirs.join(', ')}`);
+        throw new Error(`Template not found: ${layer}/${type}`);
+    }
+
+    const component = await readComponentTemplate(templateDir);
+    const styles = await readStylesTemplate(templateDir);
+
+    console.log(`Loaded template from: ${templateDir}`);
+    return { component, styles };
 }
 
 export function processTemplate(content: string, variables: Record<string, string>): string {
