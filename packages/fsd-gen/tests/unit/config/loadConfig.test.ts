@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { loadConfig, findConfigFile, mergeWithDefaults } from '../../../src/lib/config/loadConfig.js';
-import fs from 'fs';
+import * as fs from 'node:fs';
 import { defaultConfig } from '../../../src/config/types.js';
 
 vi.mock('fs');

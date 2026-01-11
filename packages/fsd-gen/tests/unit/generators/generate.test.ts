@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolveTemplateType, generateHook, generateStyles, generateComponent, updateBarrelsForBlock } from '../../../src/lib/generators/generate.js';
 import { DEFAULT_TEMPLATE, FSD_LAYERS, ACTION_TYPES } from '../../../src/lib/constants.js';
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
 import * as templateLoader from '../../../src/lib/templates/templateLoader.js';
 import * as updateBarrels from '../../../src/lib/barrels/updateBarrels.js';
 import { loadConfig } from '../../../src/lib/config/loadConfig.js';

@@ -1,12 +1,12 @@
 {
-  "name": "fsd-gen",
+  "name": "@starodubenko/fsd-gen",
   "version": "0.1.0",
   "description": "A powerful CLI tool for scaffolding Feature-Sliced Design (FSD) components, slices, and layers.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "fsd-gen": "./cli.js"
+    "fsd-gen": "cli.js"
   },
   "files": [
     "dist",
@@ -19,7 +19,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rodionstarodubenko/fsd-generator.git"
+    "url": "git+https://github.com/rodionstarodubenko/fsd-generator.git"
   },
   "keywords": [
     "fsd",

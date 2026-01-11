@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { processTemplate, resolveTemplateDirs, findTemplateDir, loadTemplate, listPresets, resolvePresetDir } from '../../../src/lib/templates/templateLoader.js';
-import fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
 
 vi.mock('fs/promises');
 

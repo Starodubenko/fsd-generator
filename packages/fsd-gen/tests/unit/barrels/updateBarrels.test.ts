@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { updateBarrel } from '../../../src/lib/barrels/updateBarrels.js';
-import fs from 'fs';
+import * as fs from 'node:fs';
 
 vi.mock('fs');
 

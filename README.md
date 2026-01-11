@@ -1,5 +1,11 @@
 # FSD Generator
 
+[![npm version](https://img.shields.io/npm/v/@starodubenko/fsd-gen.svg)](https://www.npmjs.com/package/@starodubenko/fsd-gen)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/rodionstarodubenko/fsd-generator)
+[![Downloads](https://img.shields.io/npm/dt/@starodubenko/fsd-gen.svg)](https://www.npmjs.com/package/@starodubenko/fsd-gen)
+
 A powerful CLI tool for scaffolding **Feature-Sliced Design (FSD)** components, slices, and layers. It automates boilerplate creation, manages dependencies, ensures consistent structure, and supports complex presets like full CRUD tables.
 
 ## 🚀 Key Features
@@ -26,7 +32,7 @@ A powerful CLI tool for scaffolding **Feature-Sliced Design (FSD)** components, 
 
 3.  **Build the generator:**
     ```bash
-    npm run build --workspace=fsd-generator
+    npm run build --workspace=@starodubenko/fsd-gen
     ```
 
 ## 🛠 Usage
@@ -87,7 +93,7 @@ The generator searches for `fsdgen.config.ts` in your project root.
 **Example `fsdgen.config.ts`:**
 
 ```typescript
-import { defineConfig } from 'fsd-gen';
+import { defineConfig } from '@starodubenko/fsd-gen';
 
 export default defineConfig({
   // Directory where FSD layers are located (default: 'src')

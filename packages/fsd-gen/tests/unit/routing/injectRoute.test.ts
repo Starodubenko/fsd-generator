@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { injectRoute } from '../../../src/lib/routing/injectRoute.js';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { ROUTING } from '../../../src/lib/constants.js';
 
 vi.mock('fs/promises');

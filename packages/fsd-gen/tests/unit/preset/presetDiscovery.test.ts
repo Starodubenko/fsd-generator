@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { discoverTemplates, createFileAction } from '../../../src/lib/preset/presetDiscovery.js';
 import { ACTION_TYPES, FSD_LAYERS, FSD_SEGMENTS, PRESET_DIRS } from '../../../src/lib/constants.js';
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
 
 vi.mock('fs/promises');
 

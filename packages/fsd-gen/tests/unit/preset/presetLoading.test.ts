@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { loadPresetConfig, loadPresetTs, loadPresetJson, evaluatePresetConfig } from '../../../src/lib/preset/presetLoading.js';
-import { readFile, stat } from 'fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 vi.mock('fs/promises');
 const mockJiti = {

@@ -13,7 +13,7 @@ A powerful CLI tool for scaffolding **Feature-Sliced Design (FSD)** components, 
 ## 📦 Installation
 
 ```bash
-npm install -D fsd-gen
+npm install -D @starodubenko/fsd-gen
 ```
 
 ## 🛠 Usage
@@ -21,12 +21,12 @@ npm install -D fsd-gen
 ### Basic Component Generation
 
 ```bash
-npx fsd-gen generate <layer> <slice> [name]
+npx @starodubenko/fsd-gen generate <layer> <slice> [name]
 ```
 
 **Example:**
 ```bash
-npx fsd-gen generate entity User UserCard
+npx @starodubenko/fsd-gen generate entity User UserCard
 ```
 
 ### Using Presets
@@ -34,7 +34,7 @@ npx fsd-gen generate entity User UserCard
 Presets generate multiple related components across layers.
 
 ```bash
-npx fsd-gen preset table Product
+npx @starodubenko/fsd-gen preset table Product
 ```
 
 ## ⚙️ Configuration
@@ -42,7 +42,7 @@ npx fsd-gen preset table Product
 Create an `fsdgen.config.ts` in your project root:
 
 ```typescript
-import { defineConfig } from 'fsd-gen';
+import { defineConfig } from '@starodubenko/fsd-gen';
 
 export default defineConfig({
   rootDir: 'src',

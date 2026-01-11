@@ -1,7 +1,7 @@
 /**
  * FSD Generator Configuration
  */
-import { defineConfig } from 'fsd-gen';
+import { defineConfig } from '@starodubenko/fsd-gen';
 
 export default defineConfig({
     /**
