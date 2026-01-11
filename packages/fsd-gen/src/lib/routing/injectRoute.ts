@@ -1,5 +1,5 @@
-import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { ROUTING } from '../constants.js';
 
 export interface RouteInjectionOptions {
     /** Root directory where App.tsx is located */
@@ -10,25 +10,27 @@ export interface RouteInjectionOptions {
     importPath: string;
     /** Component name (e.g., 'TestPage') */
     componentName: string;
+    /** Target file for route injection (e.g., 'App.tsx') @default "App.tsx" */
+    appFile?: string;
 }
 
-const ROUTES_INJECTION_MARKER = '{/* ROUTES_INJECTION_POINT */}';
-const IMPORTS_SECTION_END_MARKER = /^(?:import|export)\s/m;
+import { readFile, writeFile } from 'fs/promises';
+
 
 /**
  * Inject a route into App.tsx
  */
 export async function injectRoute(options: RouteInjectionOptions): Promise<void> {
-    const { rootDir, path, importPath, componentName } = options;
-    const appFilePath = join(rootDir, 'App.tsx');
+    const { rootDir, path, importPath, componentName, appFile = ROUTING.APP_FILE } = options;
+    const appFilePath = join(rootDir, appFile);
 
     try {
         // Read App.tsx
         let content = await readFile(appFilePath, 'utf-8');
 
         // Check if route injection point exists
-        if (!content.includes(ROUTES_INJECTION_MARKER)) {
-            console.warn('⚠️  Warning: ROUTES_INJECTION_POINT comment not found in App.tsx');
+        if (!content.includes(ROUTING.MARKER)) {
+            console.warn(`⚠️  Warning: ${ROUTING.MARKER} comment not found in ${ROUTING.APP_FILE}`);
             console.warn('   Route was not injected automatically.');
             return;
         }
@@ -67,8 +69,8 @@ export async function injectRoute(options: RouteInjectionOptions): Promise<void>
 
         // Insert route at injection point
         content = content.replace(
-            ROUTES_INJECTION_MARKER,
-            `${routeElement}\n            ${ROUTES_INJECTION_MARKER}`
+            ROUTING.MARKER,
+            `${routeElement}\n            ${ROUTING.MARKER}`
         );
 
         // Write back to file

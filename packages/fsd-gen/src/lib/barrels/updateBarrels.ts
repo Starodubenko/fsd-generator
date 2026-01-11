@@ -1,8 +1,9 @@
 import { join } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { FILE_EXTENSIONS } from '../constants.js';
 
 export function updateBarrel(directory: string, exportName: string, exportPath: string) {
-    const indexFile = join(directory, 'index.ts');
+    const indexFile = join(directory, FILE_EXTENSIONS.INDEX);
     let content = '';
 
     if (existsSync(indexFile)) {

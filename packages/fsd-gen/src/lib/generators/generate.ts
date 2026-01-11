@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'fs/promises';
-import { dirname, basename } from 'path';
+import { basename } from 'path';
 import { FsdPaths } from '../naming/resolvePaths.js';
 import { updateBarrel } from '../barrels/updateBarrels.js';
 import { loadTemplate, processTemplate } from '../templates/templateLoader.js';
-import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE, FSD_SEGMENTS, FILE_EXTENSIONS } from '../constants.js';
+import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE, FSD_SEGMENTS, FILE_EXTENSIONS, ACTION_TYPES } from '../constants.js';
 
 export interface TemplateContext {
   componentName: string;
@@ -55,12 +55,63 @@ export async function writeStylesFile(path: string, content: string): Promise<vo
 }
 
 /**
- * Update barrel files for the component
+ * Update barrel files for a generated block
  */
-export function updateBarrelsForComponent(paths: FsdPaths, context: TemplateContext): void {
-  const exportName = basename(paths.componentPath);
-  updateBarrel(paths.uiPath, context.componentName, exportName);
-  updateBarrel(paths.slicePath, FSD_SEGMENTS.UI, FSD_SEGMENTS.UI);
+export function updateBarrelsForBlock(
+  slicePath: string,
+  uiPath: string,
+  componentName: string,
+  exportName: string,
+  type: (typeof ACTION_TYPES)[keyof typeof ACTION_TYPES]
+): void {
+  updateBarrel(uiPath, componentName, exportName);
+
+  if (type === ACTION_TYPES.COMPONENT || type === ACTION_TYPES.HOOK || type === ACTION_TYPES.STYLES) {
+    updateBarrel(slicePath, FSD_SEGMENTS.UI, FSD_SEGMENTS.UI);
+  }
+}
+
+/**
+ * Generate a hook from a template
+ */
+export async function generateHook(
+  paths: FsdPaths,
+  context: TemplateContext,
+  templatePath: string,
+  templatesDir?: string
+) {
+  const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
+  const { component: hookTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir);
+
+  const content = processTemplate(hookTemplate, context);
+  const hookFile = `${paths.componentPath}${FILE_EXTENSIONS.TYPESCRIPT}`;
+
+  await ensureDirectory(paths.uiPath);
+  await writeFile(hookFile, content);
+  console.log(`Created ${hookFile}`);
+
+  updateBarrelsForBlock(paths.slicePath, paths.uiPath, context.componentName, context.componentName, ACTION_TYPES.HOOK);
+}
+
+/**
+ * Generate styles from a template
+ */
+export async function generateStyles(
+  paths: FsdPaths,
+  context: TemplateContext,
+  templatePath: string,
+  templatesDir?: string
+) {
+  const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
+  const { styles: stylesTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir);
+
+  const content = processTemplate(stylesTemplate, context);
+  const stylesFile = `${paths.componentPath}${FILE_EXTENSIONS.STYLES}`;
+
+  await ensureDirectory(paths.uiPath);
+  await writeStylesFile(stylesFile, content);
+
+  updateBarrelsForBlock(paths.slicePath, paths.uiPath, context.componentName, context.componentName, ACTION_TYPES.STYLES);
 }
 
 /**
@@ -78,26 +129,16 @@ export async function generateComponent(
   console.log(`Using template: ${templateOverride ? templatePath : context.layer + '/' + templatePath}`);
 
   // Step 2: Get templates directory
-  let effectiveTemplatesDir = templatesDir;
-  if (!effectiveTemplatesDir) {
-    const config = await loadConfig();
-    effectiveTemplatesDir = config.templatesDir;
-  }
+  const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
 
   // Step 3: Load template
   const { component, styles } = await loadTemplate(layerArg, templatePath, effectiveTemplatesDir);
 
-  // Step 4: Prepare variables
-  const variables = {
-    ...context,
-    componentName: context.componentName,
-  };
+  // Step 4: Render templates
+  const componentContent = processTemplate(component, context);
+  const stylesContent = processTemplate(styles, context);
 
-  // Step 5: Render templates
-  const componentContent = processTemplate(component, variables);
-  const stylesContent = processTemplate(styles, variables);
-
-  // Step 6: Write files
+  // Step 5: Write files
   const componentFile = `${paths.componentPath}${FILE_EXTENSIONS.TSX}`;
   const stylesFile = `${paths.componentPath}${FILE_EXTENSIONS.STYLES}`;
 
@@ -105,6 +146,7 @@ export async function generateComponent(
   await writeComponentFile(componentFile, componentContent);
   await writeStylesFile(stylesFile, stylesContent);
 
-  // Step 7: Update barrels
-  updateBarrelsForComponent(paths, context);
+  // Step 6: Update barrels
+  const exportName = basename(paths.componentPath);
+  updateBarrelsForBlock(paths.slicePath, paths.uiPath, context.componentName, exportName, ACTION_TYPES.COMPONENT);
 }

@@ -2,13 +2,14 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { createJiti } from 'jiti';
 import { FsdGenConfig, defaultConfig } from '../../config/types.js';
+import { CONFIG_FILES } from '../constants.js';
 
 /**
  * Find the config file in the given directory
  * @returns The config file path or null if not found
  */
 export function findConfigFile(cwd: string): string | null {
-    const configPath = join(cwd, 'fsdgen.config.ts');
+    const configPath = join(cwd, CONFIG_FILES.FSD_GEN);
     return existsSync(configPath) ? configPath : null;
 }
 

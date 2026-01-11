@@ -5,7 +5,8 @@ import { loadPresetConfig } from '../preset/presetLoading.js';
 import { discoverTemplates } from '../preset/presetDiscovery.js';
 import { executeActions } from '../preset/actionExecution.js';
 import { injectRoute } from '../routing/injectRoute.js';
-import { PresetAction, PresetConfig, FsdGenConfig } from '../../config/types.js';
+import { DISCOVERY_MODES, ACTION_TYPES, FSD_LAYERS } from '../constants.js';
+import { PresetAction, PresetConfig, FsdGenConfig, PresetComponentAction } from '../../config/types.js';
 
 /**
  * Resolve preset actions based on discovery mode
@@ -16,7 +17,7 @@ async function resolvePresetActions(
     presetName: string,
     name: string
 ): Promise<PresetAction[]> {
-    if (presetConfig.discoveryMode === 'auto') {
+    if (presetConfig.discoveryMode === DISCOVERY_MODES.AUTO) {
         console.log('Auto-discovering templates...');
         const discoveredActions = await discoverTemplates(
             presetDir,
@@ -31,9 +32,6 @@ async function resolvePresetActions(
     return presetConfig.actions || [];
 }
 
-/**
- * Handle route injection if routing configuration is provided
- */
 async function handleRouteInjection(
     presetConfig: PresetConfig,
     actions: PresetAction[],
@@ -45,32 +43,42 @@ async function handleRouteInjection(
         return;
     }
 
-    // Check if any page was generated
-    const hasPageAction = actions.some(action =>
-        action.type === 'component' && action.layer === 'page'
-    );
+    // Find all page actions
+    const pageActions = actions.filter(action =>
+        action.type === ACTION_TYPES.COMPONENT && action.layer === FSD_LAYERS.PAGE
+    ) as PresetComponentAction[];
 
-    if (!hasPageAction) {
+    if (pageActions.length === 0) {
         console.warn('⚠️  Warning: Routing config provided but no page template found');
         return;
     }
 
-    // Find the page action
-    const pageAction = actions.find(action =>
-        action.type === 'component' && action.layer === 'page'
-    );
+    for (const pageAction of pageActions) {
+        // Prepare variables for this specific action
+        const variables = {
+            name,
+            componentName: name,
+            nameLower: name.toLowerCase(),
+            nameUpper: name.toUpperCase(),
+            nameKebab: name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase(),
+            ...globalVars,
+            ...pageAction.variables
+        };
 
-    if (pageAction && pageAction.type === 'component') {
-        const pageSlice = processTemplate(pageAction.slice, { name, componentName: name, ...globalVars });
+        const pageSlice = processTemplate(pageAction.slice, variables);
         const componentName = presetConfig.routing.componentName ||
-            processTemplate(pageAction.name || pageAction.slice, { name, componentName: name, ...globalVars });
+            processTemplate(pageAction.name || pageAction.slice, variables);
         const importPath = presetConfig.routing.importPath || `@pages/${pageSlice}`;
+
+        // Support dynamic paths using variables (e.g. /{{name}})
+        const routePath = processTemplate(presetConfig.routing.path, variables);
 
         await injectRoute({
             rootDir: config.rootDir || 'src',
-            path: presetConfig.routing.path,
+            path: routePath,
             importPath,
-            componentName
+            componentName,
+            appFile: presetConfig.routing.appFile
         });
     }
 }

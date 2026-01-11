@@ -1,7 +1,9 @@
-import { join, resolve, dirname } from 'path';
+import { join, resolve, dirname, basename } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { generateComponent } from '../generators/generate.js';
+import { updateBarrel } from '../barrels/updateBarrels.js';
+import { ACTION_TYPES, FILE_EXTENSIONS } from '../constants.js';
+import { generateComponent, generateHook, generateStyles } from '../generators/generate.js';
 import { resolveFsdPaths } from '../naming/resolvePaths.js';
 import { processTemplate } from '../templates/templateLoader.js';
 import { PresetAction, PresetComponentAction, PresetFileAction, FsdGenConfig } from '../../config/types.js';
@@ -33,21 +35,80 @@ export async function executeComponentAction(
     variables: Record<string, any>,
     config: FsdGenConfig
 ): Promise<void> {
+    const componentName = processTemplate(action.name || action.slice, variables);
+    const sliceName = processTemplate(action.slice, variables);
+
     const paths = resolveFsdPaths(
         config.rootDir!,
         action.layer,
-        processTemplate(action.slice, variables),
-        processTemplate(action.name || action.slice, variables)
+        sliceName,
+        componentName
     );
 
     const context = {
         ...variables,
-        componentName: processTemplate(action.name || action.slice, variables),
-        sliceName: processTemplate(action.slice, variables),
+        componentName,
+        sliceName,
         layer: action.layer,
     };
 
     await generateComponent(paths, context, action.template, config.templatesDir);
+}
+
+/**
+ * Execute a hook action
+ */
+export async function executeHookAction(
+    action: any, // Using any for now to avoid complexity with union types in loop
+    variables: Record<string, any>,
+    config: FsdGenConfig
+): Promise<void> {
+    const componentName = processTemplate(action.name || action.slice, variables);
+    const sliceName = processTemplate(action.slice, variables);
+
+    const paths = resolveFsdPaths(
+        config.rootDir!,
+        action.layer,
+        sliceName,
+        componentName
+    );
+
+    const context = {
+        ...variables,
+        componentName,
+        sliceName,
+        layer: action.layer,
+    };
+
+    await generateHook(paths, context, action.template, config.templatesDir);
+}
+
+/**
+ * Execute a styles action
+ */
+export async function executeStylesAction(
+    action: any,
+    variables: Record<string, any>,
+    config: FsdGenConfig
+): Promise<void> {
+    const componentName = processTemplate(action.name || action.slice, variables);
+    const sliceName = processTemplate(action.slice, variables);
+
+    const paths = resolveFsdPaths(
+        config.rootDir!,
+        action.layer,
+        sliceName,
+        componentName
+    );
+
+    const context = {
+        ...variables,
+        componentName,
+        sliceName,
+        layer: action.layer,
+    };
+
+    await generateStyles(paths, context, action.template, config.templatesDir);
 }
 
 /**
@@ -99,6 +160,11 @@ export async function executeFileAction(
         const processed = processTemplate(content, variables);
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);
+
+        // Update barrel for the file
+        const dir = dirname(targetPath);
+        const fileName = basename(targetPath, FILE_EXTENSIONS.TYPESCRIPT); // Remove .ts for export
+        updateBarrel(dir, fileName, fileName);
     }
 }
 
@@ -115,10 +181,19 @@ export async function executeActions(
     for (const action of actions) {
         const variables = prepareActionVariables(action, name, globalVars);
 
-        if (action.type === 'component') {
-            await executeComponentAction(action, variables, config);
-        } else if (action.type === 'file') {
-            await executeFileAction(action, variables, config);
+        switch (action.type) {
+            case ACTION_TYPES.COMPONENT:
+                await executeComponentAction(action, variables, config);
+                break;
+            case ACTION_TYPES.FILE:
+                await executeFileAction(action, variables, config);
+                break;
+            case ACTION_TYPES.HOOK:
+                await executeHookAction(action, variables, config);
+                break;
+            case ACTION_TYPES.STYLES:
+                await executeStylesAction(action, variables, config);
+                break;
         }
     }
 

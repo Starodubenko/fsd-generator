@@ -1,4 +1,6 @@
-export type Layer = 'entity' | 'feature' | 'widget' | 'page' | 'shared';
+import { FSD_LAYERS, NAMING_MODES, ACTION_TYPES, DISCOVERY_MODES, DEFAULT_ROOT_DIR } from '../lib/constants.js';
+
+export type Layer = (typeof FSD_LAYERS)[keyof typeof FSD_LAYERS];
 
 export interface FsdGenConfig {
     /**
@@ -23,16 +25,16 @@ export interface FsdGenConfig {
      * Naming convention enforcement.
      * @default "warn"
      */
-    naming?: 'error' | 'warn' | 'autoFix';
+    naming?: (typeof NAMING_MODES)[keyof typeof NAMING_MODES];
 }
 
 export const defaultConfig: FsdGenConfig = {
-    rootDir: 'src',
+    rootDir: DEFAULT_ROOT_DIR,
     aliases: { '@': './src' },
-    naming: 'warn',
+    naming: NAMING_MODES.WARN,
 };
 
-export type PresetActionType = 'component' | 'file';
+export type PresetActionType = (typeof ACTION_TYPES)[keyof typeof ACTION_TYPES];
 
 export interface PresetActionBase {
     type: PresetActionType;
@@ -40,20 +42,36 @@ export interface PresetActionBase {
 }
 
 export interface PresetComponentAction extends PresetActionBase {
-    type: 'component';
-    layer: 'entity' | 'feature' | 'widget' | 'page' | 'shared';
+    type: typeof ACTION_TYPES.COMPONENT;
+    layer: Layer;
     slice: string;
-    name: string;
+    name?: string;
     template: string;
 }
 
 export interface PresetFileAction extends PresetActionBase {
-    type: 'file';
+    type: typeof ACTION_TYPES.FILE;
     path: string;
     template: string;
 }
 
-export type PresetAction = PresetComponentAction | PresetFileAction;
+export interface PresetHookAction extends PresetActionBase {
+    type: typeof ACTION_TYPES.HOOK;
+    layer: Layer;
+    slice: string;
+    name?: string;
+    template: string;
+}
+
+export interface PresetStylesAction extends PresetActionBase {
+    type: typeof ACTION_TYPES.STYLES;
+    layer: Layer;
+    slice: string;
+    name?: string;
+    template: string;
+}
+
+export type PresetAction = PresetComponentAction | PresetFileAction | PresetHookAction | PresetStylesAction;
 
 export interface ConventionConfig {
     /** Prefix for feature slice names (e.g., 'Manage' -> 'ManageUser') */
@@ -71,11 +89,13 @@ export interface RouteConfig {
     importPath?: string;
     /** Component name (will be auto-generated from entity name if not provided) */
     componentName?: string;
+    /** Target file for route injection (e.g., 'Router.tsx') @default "App.tsx" */
+    appFile?: string;
 }
 
 export interface PresetConfig {
     /** Optional discovery mode ('auto' = scan directories, 'manual' = use actions array) */
-    discoveryMode?: 'auto' | 'manual';
+    discoveryMode?: (typeof DISCOVERY_MODES)[keyof typeof DISCOVERY_MODES];
     /** Global variables available in all templates */
     variables?: Record<string, string>;
     /** Manual action definitions (required when discoveryMode is 'manual' or undefined) */

@@ -9,7 +9,8 @@ import {
     FILE_EXTENSIONS,
     PRESET_DIRS,
     API_HOOK_PREFIXES,
-    API_OPERATIONS
+    API_OPERATIONS,
+    ACTION_TYPES
 } from '../constants.js';
 
 /**
@@ -41,7 +42,7 @@ export function createFileAction(
     const layerPlural = LAYER_PLURALS[layer] || 'pages';
 
     return {
-        type: 'file',
+        type: ACTION_TYPES.FILE,
         path: `${layerPlural}/${entityName}/${FSD_SEGMENTS.MODEL}/${baseName}${FILE_EXTENSIONS.TYPESCRIPT}`,
         template: `${PRESET_DIRS.ROOT}/${presetName}/${layer}/${entry.name}`
     };
@@ -55,7 +56,7 @@ export function createEntityUiAction(
     presetName: string
 ): PresetComponentAction {
     return {
-        type: 'component',
+        type: ACTION_TYPES.COMPONENT,
         layer: FSD_LAYERS.ENTITY,
         slice: entityName,
         name: entityName,
@@ -70,8 +71,8 @@ export async function createEntityApiActions(
     apiDir: string,
     entityName: string,
     presetName: string
-): Promise<PresetComponentAction[]> {
-    const actions: PresetComponentAction[] = [];
+): Promise<PresetAction[]> {
+    const actions: PresetAction[] = [];
     const apiEntries = await readdir(apiDir, { withFileTypes: true });
 
     for (const apiEntry of apiEntries) {
@@ -83,7 +84,7 @@ export async function createEntityApiActions(
                 : `use${hookName.charAt(0).toUpperCase() + hookName.slice(1)}${entityName}`;
 
             actions.push({
-                type: 'component',
+                type: ACTION_TYPES.HOOK,
                 layer: FSD_LAYERS.ENTITY,
                 slice: entityName,
                 name,
@@ -103,8 +104,8 @@ export async function createFeatureButtonActions(
     entityName: string,
     presetName: string,
     conventions: ConventionConfig
-): Promise<PresetComponentAction[]> {
-    const actions: PresetComponentAction[] = [];
+): Promise<PresetAction[]> {
+    const actions: PresetAction[] = [];
     const featurePrefix = conventions.featureSlicePrefix ?? 'Manage';
     const buttonEntries = await readdir(buttonsDir, { withFileTypes: true });
 
@@ -113,11 +114,11 @@ export async function createFeatureButtonActions(
             const buttonType = buttonEntry.name; // create, edit, delete
             const capitalizedType = buttonType.charAt(0).toUpperCase() + buttonType.slice(1);
             actions.push({
-                type: 'component',
-                layer: 'feature',
+                type: ACTION_TYPES.COMPONENT,
+                layer: FSD_LAYERS.FEATURE,
                 slice: `${featurePrefix}${entityName}`,
                 name: `${capitalizedType}${entityName}Button`,
-                template: `preset/${presetName}/feature/buttons/${buttonEntry.name}`
+                template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.FEATURE}/${PRESET_DIRS.BUTTONS}/${buttonEntry.name}`
             });
         }
     }
@@ -136,11 +137,11 @@ export function createWidgetTableAction(
     const widgetSuffix = conventions.widgetSliceSuffix ?? 'Table';
 
     return {
-        type: 'component',
-        layer: 'widget',
+        type: ACTION_TYPES.COMPONENT,
+        layer: FSD_LAYERS.WIDGET,
         slice: `${entityName}${widgetSuffix}`,
         name: `${entityName}${widgetSuffix}`,
-        template: `preset/${presetName}/widget/table`
+        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.WIDGET}/${PRESET_DIRS.TABLE}`
     };
 }
 
@@ -155,11 +156,30 @@ export function createPageAction(
     const pageSuffix = conventions.pageSliceSuffix ?? 'Page';
 
     return {
-        type: 'component',
-        layer: 'page',
+        type: ACTION_TYPES.COMPONENT,
+        layer: FSD_LAYERS.PAGE,
         slice: `${entityName}${pageSuffix}`,
         name: `${entityName}${pageSuffix}`,
-        template: `preset/${presetName}/page/page`
+        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.PAGE}/${FSD_LAYERS.PAGE}`
+    };
+}
+
+/**
+ * Create component action for shared
+ */
+export function createSharedAction(
+    entryName: string,
+    entityName: string,
+    presetName: string
+): PresetComponentAction {
+    // Shared components often don't follow entity naming directly,
+    // but in discovery mode we treat existing dirs as components.
+    return {
+        type: ACTION_TYPES.COMPONENT,
+        layer: FSD_LAYERS.SHARED,
+        slice: entryName === FSD_LAYERS.SHARED ? entityName : entryName,
+        name: entryName === FSD_LAYERS.SHARED ? entityName : entryName,
+        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.SHARED}/${entryName}`
     };
 }
 
@@ -174,7 +194,7 @@ export async function discoverTemplates(
     conventions: ConventionConfig = {}
 ): Promise<PresetAction[]> {
     const actions: PresetAction[] = [];
-    const layers = ['entity', 'feature', 'widget', 'page'] as const;
+    const layers = ['entity', 'feature', 'widget', 'page', 'shared'] as const;
 
     for (const layer of layers) {
         const entries = await scanLayerDirectory(presetDir, layer);
@@ -183,7 +203,7 @@ export async function discoverTemplates(
             const fullPath = join(presetDir, layer, entry.name);
 
             // Check for .ts files (file actions)
-            if (entry.isFile() && entry.name.endsWith('.ts')) {
+            if (entry.isFile() && entry.name.endsWith(FILE_EXTENSIONS.TYPESCRIPT)) {
                 actions.push(createFileAction(entry, layer, entityName, presetName));
             }
 
@@ -191,29 +211,34 @@ export async function discoverTemplates(
             if (entry.isDirectory()) {
 
                 // Entity layer
-                if (layer === 'entity') {
-                    if (entry.name === 'ui') {
+                if (layer === FSD_LAYERS.ENTITY) {
+                    if (entry.name === FSD_SEGMENTS.UI) {
                         actions.push(createEntityUiAction(entityName, presetName));
-                    } else if (entry.name === 'api') {
+                    } else if (entry.name === FSD_SEGMENTS.API) {
                         const apiActions = await createEntityApiActions(fullPath, entityName, presetName);
                         actions.push(...apiActions);
                     }
                 }
 
                 // Feature layer
-                else if (layer === 'feature' && entry.name === 'buttons') {
+                else if (layer === FSD_LAYERS.FEATURE && entry.name === PRESET_DIRS.BUTTONS) {
                     const buttonActions = await createFeatureButtonActions(fullPath, entityName, presetName, conventions);
                     actions.push(...buttonActions);
                 }
 
                 // Widget layer
-                else if (layer === 'widget' && entry.name === 'table') {
+                else if (layer === FSD_LAYERS.WIDGET && entry.name === PRESET_DIRS.TABLE) {
                     actions.push(createWidgetTableAction(entityName, presetName, conventions));
                 }
 
                 // Page layer
-                else if (layer === 'page' && entry.name === 'page') {
+                else if (layer === FSD_LAYERS.PAGE && entry.name === FSD_LAYERS.PAGE) {
                     actions.push(createPageAction(entityName, presetName, conventions));
+                }
+
+                // Shared layer
+                else if (layer === FSD_LAYERS.SHARED) {
+                    actions.push(createSharedAction(entry.name, entityName, presetName));
                 }
             }
         }

@@ -48,6 +48,7 @@ export const FILE_EXTENSIONS = {
     STYLES: '.styles.ts',
     JSON: '.json',
     CONFIG: 'config.ts',
+    INDEX: 'index.ts',
 } as const;
 
 /**
@@ -97,6 +98,42 @@ export const DEFAULT_TEMPLATE = 'ui-basic';
  * Default root directory
  */
 export const DEFAULT_ROOT_DIR = 'src';
+
+/**
+ * Preset action types
+ */
+export const ACTION_TYPES = {
+    COMPONENT: 'component',
+    FILE: 'file',
+    HOOK: 'hook',
+    STYLES: 'styles',
+} as const;
+
+/**
+ * Discovery modes
+ */
+export const DISCOVERY_MODES = {
+    AUTO: 'auto',
+    MANUAL: 'manual',
+} as const;
+
+/**
+ * Naming convention modes
+ */
+export const NAMING_MODES = {
+    ERROR: 'error',
+    WARN: 'warn',
+    AUTO_FIX: 'autoFix',
+} as const;
+
+/**
+ * Routing configuration constants
+ */
+export const ROUTING = {
+    MARKER: '{/* ROUTES_INJECTION_POINT */}',
+    IMPORTS_REGEX: /^(?:import|export)\s/m,
+    APP_FILE: 'App.tsx',
+} as const;
 
 /**
  * Template file names

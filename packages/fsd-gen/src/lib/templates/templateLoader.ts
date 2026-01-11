@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { TEMPLATE_FILES, PRESET_DIRS } from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -48,7 +49,7 @@ export async function findTemplateDir(
  * Read the component template file
  */
 export async function readComponentTemplate(templateDir: string): Promise<string> {
-    const componentPath = join(templateDir, 'Component.tsx');
+    const componentPath = join(templateDir, TEMPLATE_FILES.COMPONENT);
     return await readFile(componentPath, 'utf-8');
 }
 
@@ -57,7 +58,7 @@ export async function readComponentTemplate(templateDir: string): Promise<string
  * @returns The styles content or empty string if not found
  */
 export async function readStylesTemplate(templateDir: string): Promise<string> {
-    const stylesPath = join(templateDir, 'Component.styles.ts');
+    const stylesPath = join(templateDir, TEMPLATE_FILES.STYLES);
     try {
         return await readFile(stylesPath, 'utf-8');
     } catch {
@@ -89,8 +90,8 @@ export async function loadTemplate(
     return { component, styles };
 }
 
-export function processTemplate(content: string, variables: Record<string, string>): string {
-    return content.replace(/\{\s*\{\s*(\w+)\s*\}\s*\}/g, (_, key) => variables[key] || '');
+export function processTemplate(content: string, variables: Record<string, any>): string {
+    return content.replace(/\{\s*\{\s*(\w+)\s*\}\s*\}/g, (_, key) => String(variables[key] ?? ''));
 }
 
 export async function listPresets(customTemplatesDir?: string): Promise<string[]> {
@@ -103,7 +104,7 @@ export async function listPresets(customTemplatesDir?: string): Promise<string[]
     }
 
     for (const dir of dirsToCheck) {
-        const presetDir = join(dir, 'preset');
+        const presetDir = join(dir, PRESET_DIRS.ROOT);
         try {
             const entries = await readdir(presetDir, { withFileTypes: true });
             for (const entry of entries) {
@@ -127,7 +128,7 @@ export async function resolvePresetDir(presetName: string, customTemplatesDir?: 
     }
 
     for (const dir of dirsToCheck) {
-        const presetDir = join(dir, 'preset', presetName);
+        const presetDir = join(dir, PRESET_DIRS.ROOT, presetName);
         try {
             await stat(presetDir);
             return presetDir;
