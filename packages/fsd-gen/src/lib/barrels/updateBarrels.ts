@@ -1,3 +1,10 @@
+/**
+ * Utility functions for updating barrel (index.ts) files.
+ * 
+ * Ensures that newly generated slices, segments, or components are automatically
+ * exported from their parent directories, maintaining clean import paths compliant
+ * with Feature-Sliced Design public API capability.
+ */
 import { join } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { FILE_EXTENSIONS } from '../constants.js';

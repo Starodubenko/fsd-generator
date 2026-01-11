@@ -1,3 +1,17 @@
+/**
+ * Generator logic for presets.
+ * 
+ * Handles the high-level orchestration of generating complete vertical slices
+ * based on predefined or custom presets. Resolves the preset configuration,
+ * discovers defined actions (files, components), and executes them.
+ */
+/**
+ * Generator logic for presets.
+ * 
+ * Handles the high-level orchestration of generating complete vertical slices
+ * based on predefined or custom presets. Resolves the preset configuration,
+ * discovers defined actions (files, components), and executes them.
+ */
 import { resolve } from 'path';
 import { loadConfig } from '../config/loadConfig.js';
 import { resolvePresetDir, processTemplate } from '../templates/templateLoader.js';

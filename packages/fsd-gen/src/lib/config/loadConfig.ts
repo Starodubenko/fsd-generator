@@ -1,3 +1,9 @@
+/**
+ * Configuration loading logic.
+ * 
+ * Responsible for finding, reading, parsing, and merging the fsd-gen configuration
+ * file (fsdgen.config.ts/js). Handles JIT compilation of TypeScript configs.
+ */
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { createJiti } from 'jiti';
@@ -52,7 +58,7 @@ export async function loadConfig(cwd: string = process.cwd()): Promise<FsdGenCon
     try {
         const userConfig = await readConfigFile(configPath);
         return mergeWithDefaults(userConfig);
-    } catch (error) {
+    } catch {
         console.error('Failed to load config, using defaults');
         return defaultConfig;
     }

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { processTemplate } from '../../src/lib/templates/templateLoader.js';
 import { prepareActionVariables } from '../../src/lib/preset/actionExecution.js';
 import { createSharedAction } from '../../src/lib/preset/presetDiscovery.js';
+import * as path from 'path';
 
 // We need to mock fs for discovery tests or at least verify the resulting actions
 describe('Integration: Logic Gaps Fixes', () => {
@@ -86,7 +87,6 @@ describe('Integration: Logic Gaps Fixes', () => {
             expect(variables.suffix).toBe('DTO');
 
             // The barrel update logic uses the basename of targetPath
-            const path = require('path');
             const dir = path.dirname(targetPath);
             const fileName = path.basename(targetPath, '.ts');
 
@@ -112,7 +112,7 @@ describe('Integration: Logic Gaps Fixes', () => {
         ];
 
         // Simulation of handleRouteInjection logic with appFile
-        const injectedRoutes = actions.map(action => {
+        const injectedRoutes = actions.map(_action => {
             const variables = {
                 name,
                 nameLower: name.toLowerCase()

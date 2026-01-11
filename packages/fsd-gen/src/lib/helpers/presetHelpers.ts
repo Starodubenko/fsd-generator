@@ -1,3 +1,9 @@
+/**
+ * Helper types and interfaces for defining and using presets.
+ * 
+ * Provides utility functions for creating preset helpers that standardize naming conventions,
+ * path resolution, and variable generation for preset authors.
+ */
 import { FsdGenConfig } from '../../config/types.js';
 
 export interface PresetHelpers {

@@ -1,3 +1,9 @@
+/**
+ * FSD path resolution logic.
+ * 
+ * Determines the correct file system paths for entities based on their layer, slice,
+ * and name. Handles the structural rules of Feature-Sliced Design (e.g. shared vs page vs entity).
+ */
 import { join } from 'path';
 import { LAYER_PLURALS, FSD_SEGMENTS, FSD_LAYERS } from '../constants.js';
 

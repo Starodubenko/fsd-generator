@@ -1,3 +1,9 @@
+/**
+ * Naming utility functions.
+ * 
+ * Provides standard functions for string manipulation, such as converting strings
+ * to PascalCase for component names or handling other case conversions required by FSD.
+ */
 export function toPascalCase(str: string): string {
     return str.replace(/(^\w|-\w)/g, (clear) => clear.replace(/-/, '').toUpperCase());
 }

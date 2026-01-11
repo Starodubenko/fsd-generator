@@ -87,7 +87,7 @@ The generator searches for `fsdgen.config.ts` in your project root.
 **Example `fsdgen.config.ts`:**
 
 ```typescript
-import { defineConfig } from 'fsd-generator';
+import { defineConfig } from 'fsd-gen';
 
 export default defineConfig({
   // Directory where FSD layers are located (default: 'src')
@@ -119,7 +119,7 @@ This project is a monorepo setup:
 To contribute or modify the generator:
 
 1.  Make changes in `packages/fsd-gen`.
-2.  Rebuild the generator: `npm run build --workspace=fsd-generator`.
+2.  Rebuild the generator: `npm run build --workspace=fsd-gen`.
 3.  Test your changes in the playground: `npm run gen --workspace=playground-app -- <args>`.
 
 ## 📄 License

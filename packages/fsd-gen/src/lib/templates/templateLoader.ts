@@ -1,3 +1,9 @@
+/**
+ * Template loading and processing.
+ * 
+ * Responsible for finding, reading, and processing template files. Handles variable
+ * substitution in template content and resolves template paths based on layers and types.
+ */
 import { readFile, readdir, stat } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -112,7 +118,7 @@ export async function listPresets(customTemplatesDir?: string): Promise<string[]
                     presets.add(entry.name);
                 }
             }
-        } catch (e) {
+        } catch {
             // Ignore if directory doesn't exist
         }
     }

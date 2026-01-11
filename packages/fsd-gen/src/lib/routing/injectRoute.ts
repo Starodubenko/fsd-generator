@@ -1,3 +1,9 @@
+/**
+ * Route injection logic.
+ * 
+ * Handles the automatic injection of routes into the main application entry point (e.g. App.tsx)
+ * when a page is generated. Parses the AST to find the correct insertion point.
+ */
 import { join } from 'path';
 import { ROUTING } from '../constants.js';
 

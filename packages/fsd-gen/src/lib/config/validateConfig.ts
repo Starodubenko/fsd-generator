@@ -1,3 +1,9 @@
+/**
+ * Configuration validation logic.
+ * 
+ * Uses Zod schemas to ensure the loaded configuration meets the required
+ * structure and constraints before the generator proceeds.
+ */
 import { FsdGenConfig } from '../../config/types.js';
 import { z } from 'zod';
 

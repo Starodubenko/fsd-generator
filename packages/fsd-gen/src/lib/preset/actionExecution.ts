@@ -1,3 +1,9 @@
+/**
+ * Action execution engine for presets.
+ * 
+ * Responsible for executing the individual actions defined in a preset (e.g., creating files,
+ * updating barrels, generating components). Handles variable substitution and logic execution.
+ */
 import { join, resolve, dirname, basename } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -161,10 +167,12 @@ export async function executeFileAction(
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);
 
-        // Update barrel for the file
-        const dir = dirname(targetPath);
-        const fileName = basename(targetPath, FILE_EXTENSIONS.TYPESCRIPT); // Remove .ts for export
-        updateBarrel(dir, fileName, fileName);
+        // Update barrel for the file (only for TypeScript files)
+        if (targetPath.endsWith(FILE_EXTENSIONS.TYPESCRIPT) || targetPath.endsWith(FILE_EXTENSIONS.TSX)) {
+            const dir = dirname(targetPath);
+            const fileName = basename(targetPath, FILE_EXTENSIONS.TYPESCRIPT); // Remove .ts for export
+            updateBarrel(dir, fileName, fileName);
+        }
     }
 }
 

@@ -254,6 +254,17 @@ describe('execution handlers', () => {
     const mockConfig = { rootDir: 'src', templatesDir: '.fsd-templates' };
     const mockPaths = { slicePath: 's', uiPath: 'u', componentPath: 'c' };
 
+    it('should execute component action correctly', async () => {
+        const action = { type: ACTION_TYPES.COMPONENT, layer: 'shared', slice: 'Button', template: 't' };
+        vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
+        vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue(mockPaths as any);
+
+        const { executeComponentAction } = await import('../../../src/lib/preset/actionExecution.js');
+        await executeComponentAction(action as any, {}, mockConfig as any);
+
+        expect(generate.generateComponent).toHaveBeenCalledWith(mockPaths, expect.any(Object), 't', '.fsd-templates');
+    });
+
     it('should execute hook action correctly', async () => {
         const action = { type: ACTION_TYPES.HOOK, layer: 'entity', slice: 'User', name: 'useUser', template: 't' };
         vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
@@ -273,6 +284,71 @@ describe('execution handlers', () => {
 
         expect(generate.generateStyles).toHaveBeenCalledWith(mockPaths, expect.any(Object), 'st', '.fsd-templates');
     });
+
+    describe('executeFileAction', () => {
+        it('should create a file from template and update barrel', async () => {
+            const action = { type: ACTION_TYPES.FILE, path: 'test.ts', template: 'file-t' };
+            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
+            // Mock fs.readFile for loadFileTemplate
+            const fs = await import('fs/promises');
+            vi.mocked(fs.readFile).mockResolvedValue('file content');
+
+            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
+            await executeFileAction(action as any, {}, mockConfig as any);
+
+            expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining('test.ts'), 'file content');
+            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
+            expect(updateBarrels.updateBarrel).toHaveBeenCalled();
+        });
+
+        it('should throw error if file template not found', async () => {
+            const action = { type: ACTION_TYPES.FILE, path: 'test.ts', template: 'missing' };
+            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
+            const fs = await import('fs/promises');
+            vi.mocked(fs.readFile).mockRejectedValue(new Error('no'));
+
+            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
+            await expect(executeFileAction(action as any, {}, mockConfig as any)).rejects.toThrow('Could not find file template');
+        });
+
+        it('should skip barrel update for non-TS files', async () => {
+            const action = { type: ACTION_TYPES.FILE, path: 'test.css', template: 'file-t' };
+            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
+            const fs = await import('fs/promises');
+            vi.mocked(fs.readFile).mockResolvedValue('content');
+
+            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
+            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
+            await executeFileAction(action as any, {}, mockConfig as any);
+
+            expect(updateBarrels.updateBarrel).not.toHaveBeenCalled();
+        });
+
+        it('should update barrel for .tsx files', async () => {
+            const action = { type: ACTION_TYPES.FILE, path: 'comp.tsx', template: 'file-t' };
+            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
+            const fs = await import('fs/promises');
+            vi.mocked(fs.readFile).mockResolvedValue('content');
+
+            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
+            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
+            await executeFileAction(action as any, {}, mockConfig as any);
+
+            expect(updateBarrels.updateBarrel).toHaveBeenCalled();
+        });
+
+        it('should do nothing if template is missing', async () => {
+            const action = { type: ACTION_TYPES.FILE, path: 'test.ts' };
+            const fs = await import('fs/promises');
+
+            const startWriteCount = vi.mocked(fs.writeFile).mock.calls.length;
+
+            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
+            await executeFileAction(action as any, {}, mockConfig as any);
+
+            expect(vi.mocked(fs.writeFile).mock.calls.length).toBe(startWriteCount);
+        });
+    });
 });
 
 describe('executeActions', () => {
@@ -280,17 +356,23 @@ describe('executeActions', () => {
         vi.clearAllMocks();
     });
 
-    it('should dispatch HOOK and STYLES actions correctly', async () => {
+    it('should dispatch all action types correctly', async () => {
         const actions = [
+            { type: ACTION_TYPES.COMPONENT, layer: 'shared', slice: 'S' },
+            { type: ACTION_TYPES.FILE, path: 'f', template: 't' },
             { type: ACTION_TYPES.HOOK, layer: 'entity', slice: 'U', template: 't1' },
             { type: ACTION_TYPES.STYLES, layer: 'entity', slice: 'U', template: 't2' }
         ];
         vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
         vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue({} as any);
+        const fs = await import('fs/promises');
+        vi.mocked(fs.readFile).mockResolvedValue('content');
 
         await executeActions(actions as any, 'User', {}, { rootDir: 'src' } as any);
 
+        expect(generate.generateComponent).toHaveBeenCalled();
         expect(generate.generateHook).toHaveBeenCalled();
         expect(generate.generateStyles).toHaveBeenCalled();
+        expect(fs.writeFile).toHaveBeenCalled();
     });
 });

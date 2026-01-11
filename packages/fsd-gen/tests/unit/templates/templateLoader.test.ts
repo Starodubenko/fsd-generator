@@ -1,7 +1,124 @@
-import { describe, it, expect } from 'vitest';
-import { processTemplate } from '../../../src/lib/templates/templateLoader.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { processTemplate, resolveTemplateDirs, findTemplateDir, loadTemplate, listPresets, resolvePresetDir } from '../../../src/lib/templates/templateLoader.js';
+import fs from 'fs/promises';
+
+vi.mock('fs/promises');
 
 describe('templateLoader', () => {
+    beforeEach(() => {
+        vi.resetAllMocks();
+    });
+
+    describe('resolveTemplateDirs', () => {
+        it('should return internal dir by default', () => {
+            const dirs = resolveTemplateDirs();
+            expect(dirs.some(d => d.endsWith('templates'))).toBe(true);
+        });
+
+        it('should prepend custom dir if provided', () => {
+            const dirs = resolveTemplateDirs('/custom');
+            expect(dirs[0]).toBe('/custom');
+            expect(dirs.length).toBe(2);
+        });
+    });
+
+    describe('findTemplateDir', () => {
+        it('should return the first existing template dir', async () => {
+            vi.mocked(fs.stat).mockRejectedValueOnce(new Error('no')).mockResolvedValueOnce({} as any);
+            const path = await findTemplateDir('layer', 'type', ['/dir1', '/dir2']);
+            expect(path).toBe('/dir2/layer/type');
+        });
+
+        it('should return null if none found', async () => {
+            vi.mocked(fs.stat).mockRejectedValue(new Error('no'));
+            const path = await findTemplateDir('layer', 'type', ['/dir1']);
+            expect(path).toBeNull();
+        });
+
+        it('should handle empty layer string (flat structure)', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({} as any);
+            const path = await findTemplateDir('', 'type', ['/dir']);
+            expect(path).toBe('/dir/type');
+        });
+    });
+
+    describe('loadTemplate', () => {
+        it('should load component and styles', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({} as any);
+            vi.mocked(fs.readFile).mockResolvedValueOnce('comp content').mockResolvedValueOnce('styles content');
+
+            const result = await loadTemplate('layer', 'type', '/custom');
+            expect(result).toEqual({ component: 'comp content', styles: 'styles content' });
+        });
+
+        it('should return empty styles if file missing', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({} as any);
+            vi.mocked(fs.readFile)
+                .mockResolvedValueOnce('comp content')
+                .mockRejectedValueOnce(new Error('no styles'));
+
+            const result = await loadTemplate('layer', 'type');
+            expect(result.styles).toBe('');
+        });
+
+        it('should throw error if template dir not found', async () => {
+            vi.mocked(fs.stat).mockRejectedValue(new Error('no'));
+            await expect(loadTemplate('layer', 'type')).rejects.toThrow('Template not found');
+        });
+    });
+
+    describe('listPresets', () => {
+        it('should list directories in preset root', async () => {
+            vi.mocked(fs.readdir).mockResolvedValue([
+                { name: 'table', isDirectory: () => true },
+                { name: 'file.txt', isDirectory: () => false }
+            ] as any);
+
+            const presets = await listPresets();
+            expect(presets).toContain('table');
+            expect(presets).not.toContain('file.txt');
+        });
+
+        it('should list directories in custom and internal presets', async () => {
+            vi.mocked(fs.readdir).mockImplementation(async (path) => {
+                if (String(path).includes('custom')) {
+                    return [{ name: 'custom-preset', isDirectory: () => true }] as any;
+                }
+                return [{ name: 'table', isDirectory: () => true }] as any;
+            });
+
+            const presets = await listPresets('/custom');
+            expect(presets).toContain('custom-preset');
+            expect(presets).toContain('table');
+        });
+
+        it('should handle missing preset directory gracefully', async () => {
+            vi.mocked(fs.readdir).mockRejectedValue(new Error('no dir'));
+            const presets = await listPresets();
+            expect(presets).toEqual([]);
+        });
+    });
+
+    describe('resolvePresetDir', () => {
+        it('should prioritize custom preset directory', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({} as any);
+            const path = await resolvePresetDir('custom-preset', '/custom');
+            expect(path).toBe('/custom/preset/custom-preset');
+        });
+
+        it('should return path if preset exists', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({} as any);
+            const path = await resolvePresetDir('table', '/custom');
+            expect(path).toBe('/custom/preset/table');
+        });
+
+        it('should return null if preset not found', async () => {
+            vi.mocked(fs.stat).mockRejectedValue(new Error('no'));
+            const path = await resolvePresetDir('table');
+            expect(path).toBeNull();
+        });
+    });
+
     describe('processTemplate', () => {
         it('should replace single variable', () => {
             const template = 'Hello {{name}}!';

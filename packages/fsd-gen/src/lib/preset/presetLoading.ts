@@ -1,3 +1,9 @@
+/**
+ * Preset loading logic.
+ * 
+ * Responsible for loading preset configurations from either TypeScript files (preset.ts)
+ * or JSON files (preset.json). Handles module resolution and parsing.
+ */
 import { join } from 'path';
 import { readFile, stat } from 'fs/promises';
 import { createJiti } from 'jiti';
@@ -17,7 +23,7 @@ export async function loadPresetTs(presetDir: string): Promise<PresetConfig | Pr
         const jiti = createJiti(import.meta.url);
         const imported = await jiti.import(presetTsPath, { default: true }) as any;
         return imported.default || imported;
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -33,7 +39,7 @@ export async function loadPresetJson(presetDir: string): Promise<PresetConfig | 
         const content = await readFile(presetJsonPath, 'utf-8');
         console.log(`Found preset.json at ${presetJsonPath}...`);
         return JSON.parse(content);
-    } catch (e) {
+    } catch {
         return null;
     }
 }

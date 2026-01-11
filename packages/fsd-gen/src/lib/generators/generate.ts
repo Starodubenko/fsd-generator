@@ -1,3 +1,9 @@
+/**
+ * Core generator functions for creating FSD components, slices, and blocks.
+ * 
+ * Orchestrates the creation of directories, files, and barrel updates for individual
+ * entities (components, styles, hooks) within a specific layer and slice.
+ */
 import { mkdir, writeFile } from 'fs/promises';
 import { basename } from 'path';
 import { FsdPaths } from '../naming/resolvePaths.js';

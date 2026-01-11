@@ -1,3 +1,15 @@
+/**
+ * Preset discovery mechanism.
+ * 
+ * Scans the preset directory structure to automatically discover and register template actions.
+ * Converts the file system structure of a preset into a list of executable generator actions.
+ */
+/**
+ * Preset discovery mechanism.
+ * 
+ * Scans the preset directory structure to automatically discover and register template actions.
+ * Converts the file system structure of a preset into a list of executable generator actions.
+ */
 import { readdir, stat } from 'fs/promises';
 import type { Dirent } from 'fs';
 import { join } from 'path';
