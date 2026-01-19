@@ -7,6 +7,7 @@
 import { join, resolve, dirname, basename } from 'path';
 import { writeFile, mkdir, readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
+import { createJiti } from 'jiti';
 import { updateBarrel } from '../barrels/updateBarrels.js';
 import { ACTION_TYPES, FILE_EXTENSIONS } from '../constants.js';
 import { generateComponent, generateHook, generateStyles } from '../generators/generate.js';
@@ -16,6 +17,7 @@ import { PresetAction, PresetComponentAction, PresetFileAction, FsdGenConfig } f
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const jiti = createJiti(__filename);
 
 /**
  * Prepare variables for an action by merging global and action-specific variables
@@ -123,7 +125,7 @@ export async function executeStylesAction(
 export async function loadFileTemplate(
     templatePath: string,
     customTemplatesDir?: string
-): Promise<string> {
+): Promise<string | ((context: any) => string)> {
     const internalTemplatesDir = join(__dirname, '../../../templates');
     const pathsToCheck = [];
 
@@ -134,6 +136,19 @@ export async function loadFileTemplate(
 
     for (const p of pathsToCheck) {
         try {
+            // Try loading as a module first if it's a TS/JS file
+            if (p.endsWith('.ts') || p.endsWith('.tsx') || p.endsWith('.js')) {
+                try {
+                    const module = await jiti.import(p) as { default: (context: any) => string };
+                    if (typeof module.default === 'function') {
+                        console.log(`Loaded file template (module) from: ${p}`);
+                        return module.default;
+                    }
+                } catch {
+                    // Not a module or failed to load, fall back to string read
+                }
+            }
+
             const content = await readFile(p, 'utf-8');
             console.log(`Loaded file template from: ${p}`);
             return content;

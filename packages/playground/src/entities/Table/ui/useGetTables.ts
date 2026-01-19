@@ -1,15 +1,13 @@
-import { TemplateContext } from '@starodubenko/fsd-gen';
 
-export default (ctx: TemplateContext) => `
 import { useState, useEffect } from 'react';
-import type { ${ctx.baseName} } from '../model/model';
-import { mock${ctx.baseName}Data } from '../model/model';
+import type { Table } from '../model/model';
+import { mockTableData } from '../model/model';
 
 // Mock API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export function useGet${ctx.baseName}s() {
-  const [data, setData] = useState<${ctx.baseName}[]>([]);
+export function useGetTables() {
+  const [data, setData] = useState<Table[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -20,7 +18,7 @@ export function useGet${ctx.baseName}s() {
       setIsLoading(true);
       try {
         await delay(500);
-        if (mounted) setData(mock${ctx.baseName}Data);
+        if (mounted) setData(mockTableData);
       } catch (e) {
         if (mounted) setError(e as Error);
       } finally {
@@ -35,4 +33,3 @@ export function useGet${ctx.baseName}s() {
 
   return { data, isLoading, error };
 }
-`;

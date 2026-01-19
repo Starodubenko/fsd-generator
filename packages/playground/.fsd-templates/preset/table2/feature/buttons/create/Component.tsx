@@ -1,8 +1,11 @@
-import styled from '@emotion/styled';
-import type { {{baseName}} } from '{{entityImportPath}}/model/model';
-import { useCreate{{baseName}} } from '{{apiImportPath}}';
+import { TemplateContext } from '@starodubenko/fsd-gen';
 
-const Button = styled.button`
+export default (ctx: TemplateContext) => `
+import styled from '@emotion/styled';
+import type { ${ctx.baseName} } from '${ctx.entityImportPath}/model/model';
+import { useCreate${ctx.baseName} } from '${ctx.apiImportPath}';
+
+const Button = styled.button\`
   padding: 0.5rem 1rem;
   margin: 0 0.5rem;
   border-radius: 4px;
@@ -19,13 +22,14 @@ const Button = styled.button`
   &:hover:not(:disabled) {
     background-color: #0056b3;
   }
-`;
+\`;
 
-export const {{componentName}} = () => {
-  const { mutate, isLoading } = useCreate{{baseName}}();
+export const ${ctx.componentName} = () => {
+  const { mutate, isLoading } = useCreate${ctx.baseName}();
   return (
-    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<{{baseName}}, 'id'>)} disabled={isLoading}>
-      {isLoading ? 'Creating...' : 'Create {{baseName}}'}
+    <Button onClick={() => mutate({ /* mock data */ } as unknown as Omit<${ctx.baseName}, 'id'>)} disabled={isLoading}>
+      {isLoading ? 'Creating...' : 'Create ${ctx.baseName}'}
     </Button>
   );
 };
+`;

@@ -11,12 +11,7 @@ import { updateBarrel } from '../barrels/updateBarrels.js';
 import { loadTemplate, processTemplate } from '../templates/templateLoader.js';
 import { DEFAULT_TEMPLATES, DEFAULT_TEMPLATE, FSD_SEGMENTS, FILE_EXTENSIONS, ACTION_TYPES } from '../constants.js';
 
-export interface TemplateContext {
-  componentName: string;
-  sliceName: string;
-  layer: string;
-}
-
+import { TemplateContext } from '../../config/types.js';
 import { loadConfig } from '../config/loadConfig.js';
 
 /**

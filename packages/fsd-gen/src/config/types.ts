@@ -123,4 +123,9 @@ export function definePreset(config: PresetConfig | PresetConfigFn): PresetConfi
     return config;
 }
 
+export interface TemplateContext extends Record<string, any> {
+    componentName: string;
+    sliceName: string;
+    layer: string;
+}
 

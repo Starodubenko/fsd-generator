@@ -1,16 +1,14 @@
-import { TemplateContext } from '@starodubenko/fsd-gen';
 
-export default (ctx: TemplateContext) => `
 import styled from '@emotion/styled';
-import { useGet${ctx.baseName}s } from '${ctx.entityImportPath}/ui';
-import { Create${ctx.baseName}Button, Edit${ctx.baseName}Button, Delete${ctx.baseName}Button } from '${ctx.featureImportPath}/ui';
+import { useGetTables } from '@entities/Table/ui';
+import { CreateTableButton, EditTableButton, DeleteTableButton } from '@features/ManageTable/ui';
 
-const TableWrapper = styled.div\`
+const TableWrapper = styled.div`
   border: 1px solid #eee;
   padding: 1rem;
-\`;
+`;
 
-const Table = styled.table\`
+const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   
@@ -19,10 +17,10 @@ const Table = styled.table\`
     padding: 8px;
     text-align: left;
   }
-\`;
+`;
 
-export const ${ctx.componentName} = () => {
-  const { data, isLoading, error } = useGet${ctx.baseName}s();
+export const TableTable = () => {
+  const { data, isLoading, error } = useGetTables();
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error loading data</div>;
@@ -30,7 +28,7 @@ export const ${ctx.componentName} = () => {
   return (
     <TableWrapper>
         <div style={{ marginBottom: '1rem' }}>
-        <Create${ctx.baseName}Button />
+        <CreateTableButton />
       </div>
       <Table>
         <thead>
@@ -46,8 +44,8 @@ export const ${ctx.componentName} = () => {
               <td>{item.id}</td>
               <td>{item.name}</td>
               <td>
-                <Edit${ctx.baseName}Button id={item.id} />
-                <Delete${ctx.baseName}Button id={item.id} />
+                <EditTableButton id={item.id} />
+                <DeleteTableButton id={item.id} />
               </td>
             </tr>
           ))}
@@ -56,4 +54,3 @@ export const ${ctx.componentName} = () => {
     </TableWrapper>
   );
 };
-`;

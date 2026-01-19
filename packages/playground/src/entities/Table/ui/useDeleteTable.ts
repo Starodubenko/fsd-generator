@@ -1,12 +1,10 @@
-import { TemplateContext } from '@starodubenko/fsd-gen';
 
-export default (ctx: TemplateContext) => `
 import { useState } from 'react';
 
 // Mock API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export function useDelete${ctx.baseName}() {
+export function useDeleteTable() {
   const [isLoading, setIsLoading] = useState(false);
 
   const mutate = async (id: string) => {
@@ -18,4 +16,3 @@ export function useDelete${ctx.baseName}() {
 
   return { mutate, isLoading };
 }
-`;

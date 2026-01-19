@@ -1,10 +1,8 @@
-import { TemplateContext } from '@starodubenko/fsd-gen';
 
-export default (ctx: TemplateContext) => `
 import styled from '@emotion/styled';
-import { useDelete${ctx.baseName} } from '${ctx.apiImportPath}';
+import { useDeleteTable } from '@entities/Table/ui';
 
-const Button = styled.button\`
+const Button = styled.button`
   padding: 0.5rem 1rem;
   margin: 0 0.5rem;
   border-radius: 4px;
@@ -21,14 +19,13 @@ const Button = styled.button\`
   &:hover:not(:disabled) {
     background-color: #c82333;
   }
-\`;
+`;
 
-export const ${ctx.componentName} = ({ id }: { id: string }) => {
-  const { mutate, isLoading } = useDelete${ctx.baseName}();
+export const DeleteTableButton = ({ id }: { id: string }) => {
+  const { mutate, isLoading } = useDeleteTable();
   return (
     <Button onClick={() => mutate(id)} disabled={isLoading}>
       {isLoading ? 'Deleting...' : 'Delete'}
     </Button>
   );
 };
-`;

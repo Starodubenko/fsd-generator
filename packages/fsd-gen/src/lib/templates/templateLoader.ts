@@ -1,16 +1,13 @@
-/**
- * Template loading and processing.
- * 
- * Responsible for finding, reading, and processing template files. Handles variable
- * substitution in template content and resolves template paths based on layers and types.
- */
 import { readFile, readdir, stat } from 'fs/promises';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { createJiti } from 'jiti';
 import { TEMPLATE_FILES, PRESET_DIRS } from '../constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const jiti = createJiti(__filename);
 
 /**
  * Resolve the list of directories to search for templates
@@ -53,8 +50,29 @@ export async function findTemplateDir(
 
 /**
  * Read the component template file
+ * Supports .tsx, .ts, .js for dynamic templates, falls back to static string reading
  */
-export async function readComponentTemplate(templateDir: string): Promise<string> {
+export async function readComponentTemplate(templateDir: string): Promise<string | ((context: any) => string)> {
+    // Try to find dynamic template files
+    const extensions = ['.tsx', '.ts', '.js'];
+    const baseName = TEMPLATE_FILES.COMPONENT.replace('.tsx', ''); // Removing extension if present in constant to try different ones
+
+    // Check for Component.tsx, Component.ts, Component.js that are modules
+    for (const ext of extensions) {
+        try {
+            const modulePath = resolve(templateDir, `Component${ext}`);
+            await stat(modulePath);
+            // Found a module file, load it with jiti
+            const module = await jiti.import(modulePath) as { default: (context: any) => string };
+            if (typeof module.default === 'function') {
+                return module.default;
+            }
+        } catch {
+            // Continue
+        }
+    }
+
+    // Fallback to reading as text (original behavior)
     const componentPath = join(templateDir, TEMPLATE_FILES.COMPONENT);
     return await readFile(componentPath, 'utf-8');
 }
@@ -63,7 +81,26 @@ export async function readComponentTemplate(templateDir: string): Promise<string
  * Read the styles template file (optional)
  * @returns The styles content or empty string if not found
  */
-export async function readStylesTemplate(templateDir: string): Promise<string> {
+export async function readStylesTemplate(templateDir: string): Promise<string | ((context: any) => string)> {
+    // Try to find dynamic template files
+    const extensions = ['.ts', '.js'];
+
+    // Check for Component.styles.ts, Component.styles.js
+    for (const ext of extensions) {
+        try {
+            // Adjust this if TEMPLATE_FILES.STYLES differs
+            const modulePath = join(templateDir, `Component.styles${ext}`);
+            await stat(modulePath);
+            // Found a module file, load it with jiti
+            const module = await jiti.import(modulePath) as { default: (context: any) => string };
+            if (typeof module.default === 'function') {
+                return module.default;
+            }
+        } catch {
+            // Continue
+        }
+    }
+
     const stylesPath = join(templateDir, TEMPLATE_FILES.STYLES);
     try {
         return await readFile(stylesPath, 'utf-8');
@@ -80,7 +117,7 @@ export async function loadTemplate(
     layer: string,
     type: string = 'ui',
     customTemplatesDir?: string
-): Promise<{ component: string; styles: string }> {
+): Promise<{ component: string | ((context: any) => string); styles: string | ((context: any) => string) }> {
     const searchDirs = resolveTemplateDirs(customTemplatesDir);
     const templateDir = await findTemplateDir(layer, type, searchDirs);
 
@@ -96,7 +133,10 @@ export async function loadTemplate(
     return { component, styles };
 }
 
-export function processTemplate(content: string, variables: Record<string, any>): string {
+export function processTemplate(content: string | ((context: any) => string), variables: Record<string, any>): string {
+    if (typeof content === 'function') {
+        return content(variables);
+    }
     return content.replace(/\{\s*\{\s*(\w+)\s*\}\s*\}/g, (_, key) => String(variables[key] ?? ''));
 }
 

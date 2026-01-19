@@ -1,19 +1,23 @@
+import { TemplateContext } from '@starodubenko/fsd-gen';
+
+export default (ctx: TemplateContext) => `
 import styled from '@emotion/styled';
-import { {{widgetSlice}} } from '{{widgetImportPath}}/ui/';
+import { ${ctx.widgetSlice} } from '${ctx.widgetImportPath}/ui/';
 
-const PageWrapper = styled.div`
+const PageWrapper = styled.div\`
   padding: 2rem;
-`;
+\`;
 
-const Title = styled.h1`
+const Title = styled.h1\`
   margin-bottom: 2rem;
-`;
+\`;
 
-export const {{componentName}} = () => {
+export const ${ctx.componentName} = () => {
   return (
     <PageWrapper>
-      <Title>{{baseName}} Management</Title>
-      <{{widgetSlice}} />
+      <Title>${ctx.baseName} Management</Title>
+      <${ctx.widgetSlice} />
     </PageWrapper>
   );
 };
+`;

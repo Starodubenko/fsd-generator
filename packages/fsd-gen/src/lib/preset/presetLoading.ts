@@ -23,7 +23,8 @@ export async function loadPresetTs(presetDir: string): Promise<PresetConfig | Pr
         const jiti = createJiti(import.meta.url);
         const imported = await jiti.import(presetTsPath, { default: true }) as any;
         return imported.default || imported;
-    } catch {
+    } catch (error) {
+        console.error(`Failed to load preset content from ${presetTsPath}:`, error);
         return null;
     }
 }

@@ -1,4 +1,4 @@
-import { definePreset, createPresetHelpers } from 'fsd-generator';
+import { definePreset, createPresetHelpers } from '@starodubenko/fsd-gen';
 
 
 export default definePreset(({ name, config }) => {

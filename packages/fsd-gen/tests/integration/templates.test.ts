@@ -80,4 +80,18 @@ export const {{componentName}}: FC<{{componentName}}Props> = (props) => {
 
         expect(result).toBe('Hello , your role is .');
     });
+
+    it('should execute function-based templates with context', () => {
+        // Mock a template function (like what jiti would return)
+        const templateFn = (ctx: any) => `export const ${ctx.componentName} = () => {};`;
+
+        const variables = {
+            componentName: 'MyComponent'
+        };
+
+        const result = processTemplate(templateFn, variables);
+
+        expect(result).toBe('export const MyComponent = () => {};');
+    });
 });
+
