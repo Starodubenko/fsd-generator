@@ -1,0 +1,70 @@
+import type { GeneratorContext } from '@starodubenko/fsd-gen';
+
+export default (ctx: GeneratorContext) => {
+  const {
+    base: { baseName },
+    template: { componentName },
+    layer: {
+      entity: { importPath: entityImportPath },
+      features: { importPath: featureImportPath },
+    }
+  } = ctx;
+
+  return `
+import styled from '@emotion/styled';
+import { useGet${baseName}s } from '${entityImportPath}/ui';
+import { Create${baseName}Button, Edit${baseName}Button, Delete${baseName}Button } from '${featureImportPath}/ui';
+
+const TableWrapper = styled.div\`
+  border: 1px solid #eee;
+  padding: 1rem;
+\`;
+
+const Table = styled.table\`
+  width: 100%;
+  border-collapse: collapse;
+  
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+\`;
+
+export const ${componentName} = () => {
+  const { data, isLoading, error } = useGet${baseName}s();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading data</div>;
+
+  return (
+    <TableWrapper>
+        <div style={{ marginBottom: '1rem' }}>
+        <Create${baseName}Button />
+      </div>
+      <Table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => (
+            <tr key={item.id}>
+              <td>{item.id}</td>
+              <td>{item.name}</td>
+              <td>
+                <Edit${baseName}Button id={item.id} />
+                <Delete${baseName}Button id={item.id} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </TableWrapper>
+  );
+};
+`;
+};

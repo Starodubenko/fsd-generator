@@ -1,1 +1,0 @@
-// Styles for Widget {{componentName}}

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { TablePage } from '@pages/TablePage';
+import { UserPage } from '@pages/UserPage';
 
 function App() {
   return (
@@ -10,8 +10,8 @@ function App() {
         </nav>
         <main>
           <Routes>
-            <Route path="/" element={<h1>Home</h1>} />
-                        <Route path="/table" element={<TablePage />} />
+            <Route path="/" element={<h1>Home</h1>} />   
+            <Route path="/user" element={<UserPage />} />
             {/* ROUTES_INJECTION_POINT */}
           </Routes>
         </main>

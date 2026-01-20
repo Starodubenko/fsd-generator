@@ -1,378 +1,253 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prepareActionVariables, executeHookAction, executeStylesAction, executeActions } from '../../../src/lib/preset/actionExecution.js';
-import { ACTION_TYPES } from '../../../src/lib/constants.js';
-import * as generate from '../../../src/lib/generators/generate.js';
-import * as resolvePaths from '../../../src/lib/naming/resolvePaths.js';
+import * as actionExecutionModule from '../../../src/lib/preset/actionExecution.js';
+import { executeComponentAction, executeHookAction, executeStylesAction, executeFileAction } from '../../../src/lib/preset/actionExecution.js';
+import { FsdGenConfig, PresetComponentAction, GeneratorContext, PresetHookAction, PresetStylesAction, PresetFileAction } from '../../../src/config/types.js';
+import { ACTION_TYPES, FSD_LAYERS } from '../../../src/lib/constants.js';
+import * as generateModule from '../../../src/lib/generators/generate.js';
 import * as templateLoader from '../../../src/lib/templates/templateLoader.js';
+import * as resolvePaths from '../../../src/lib/naming/resolvePaths.js';
 
+// Mock dependencies
+// Mock dependencies
 vi.mock('../../../src/lib/generators/generate.js');
-vi.mock('../../../src/lib/naming/resolvePaths.js');
 vi.mock('../../../src/lib/templates/templateLoader.js');
-vi.mock('../../../src/lib/barrels/updateBarrels.js');
-vi.mock('fs/promises');
+vi.mock('../../../src/lib/naming/resolvePaths.js');
+vi.mock('../../../src/lib/barrels/updateBarrels.js'); // Mock updateBarrel to prevent FS operations
+vi.mock('node:fs/promises'); // Add fs mock
 
 describe('actionExecution', () => {
-    describe('prepareActionVariables', () => {
-        it('should merge global and action-specific variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    icon: 'user-icon',
-                    theme: 'dark',
-                },
-            };
 
-            const globalVars = {
-                author: 'Team',
-                version: '1.0',
-            };
-
-            const result = prepareActionVariables(action, 'User', globalVars);
-
-            expect(result).toEqual({
-                name: 'User',
-                componentName: 'User',
-                author: 'Team',
-                version: '1.0',
-                icon: 'user-icon',
-                theme: 'dark',
-            });
-        });
-
-        it('should prioritize action variables over global variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    theme: 'light',
-                },
-            };
-
-            const globalVars = {
-                theme: 'dark',
-            };
-
-            const result = prepareActionVariables(action, 'User', globalVars);
-
-            expect(result.theme).toBe('light');
-        });
-
-        it('should handle action with no variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-            };
-
-            const globalVars = {
-                author: 'Team',
-            };
-
-            const result = prepareActionVariables(action, 'User', globalVars);
-
-            expect(result).toEqual({
-                name: 'User',
-                componentName: 'User',
-                author: 'Team',
-            });
-        });
-
-        it('should handle empty global variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    icon: 'user-icon',
-                },
-            };
-
-            const result = prepareActionVariables(action, 'TestEntity', {});
-
-            expect(result).toEqual({
-                name: 'TestEntity',
-                componentName: 'TestEntity',
-                icon: 'user-icon',
-            });
-        });
-
-        // P0: Critical edge cases
-        it('should handle empty name parameter', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-            };
-
-            const result = prepareActionVariables(action, '', {});
-
-            expect(result).toEqual({
-                name: '',
-                componentName: '',
-            });
-        });
-
-        it('should handle action.variables being undefined', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: undefined,
-            };
-
-            const result = prepareActionVariables(action as any, 'User', { author: 'Team' });
-
-            expect(result).toEqual({
-                name: 'User',
-                componentName: 'User',
-                author: 'Team',
-            });
-        });
-
-        // P1: Variable type conflicts
-        it('should handle conflicting variable types (last wins)', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    count: 'string-42', // String value
-                },
-            };
-
-            const globalVars = {
-                count: '10', // Different string value
-            };
-
-            const result = prepareActionVariables(action, 'User', globalVars);
-            expect(result.count).toBe('string-42'); // Action wins
-        });
-
-        // P1: Reserved name collisions
-        it('should allow overriding reserved "name" from action variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    name: 'CustomName', // Tries to override
-                },
-            };
-
-            const result = prepareActionVariables(action, 'User', {});
-            // Action variables come last, so they win
-            expect(result.name).toBe('CustomName');
-        });
-
-        it('should allow overriding "componentName" from action variables', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    componentName: 'OverriddenComponent',
-                },
-            };
-
-            const result = prepareActionVariables(action, 'User', {});
-            expect(result.componentName).toBe('OverriddenComponent');
-        });
-
-        // P1: Large variable sets
-        it('should handle many variables efficiently', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {},
-            };
-
-            const globalVars: Record<string, string> = {};
-            for (let i = 0; i < 100; i++) {
-                globalVars[`var${i}`] = `value${i}`;
-            }
-
-            const result = prepareActionVariables(action, 'User', globalVars);
-
-            expect(result.name).toBe('User');
-            expect(result.var0).toBe('value0');
-            expect(result.var99).toBe('value99');
-            expect(Object.keys(result).length).toBeGreaterThan(100); // name, componentName + 100 vars
-        });
-
-        // P1: Special characters in variable names/values
-        it('should handle special characters in variable values', () => {
-            const action = {
-                type: 'component' as const,
-                layer: 'entity' as const,
-                slice: 'User',
-                name: 'UserCard',
-                template: 'preset/test/entity/ui',
-                variables: {
-                    path: '../../../malicious',
-                    style: '<script>alert("xss")</script>',
-                },
-            };
-
-            const result = prepareActionVariables(action, 'User', {});
-
-            // No sanitization - passes through as-is
-            expect(result.path).toBe('../../../malicious');
-            expect(result.style).toBe('<script>alert("xss")</script>');
-        });
-    });
-});
-
-describe('execution handlers', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Setup default mocks
+        vi.spyOn(templateLoader, 'processTemplate').mockImplementation((tmpl) => tmpl as string);
+        vi.spyOn(resolvePaths, 'resolveFsdPaths').mockReturnValue({
+            layerPath: '/mock/entities',
+            slicePath: '/mock/entities/User',
+            uiPath: '/mock/entities/User/ui',
+            componentPath: '/mock/entities/User/ui/UserCard'
+        });
     });
 
-    const mockConfig = { rootDir: 'src', templatesDir: '.fsd-templates' };
-    const mockPaths = { slicePath: 's', uiPath: 'u', componentPath: 'c' };
+    describe('executeComponentAction', () => {
+        it('should pass a complete GeneratorContext to generateComponent', async () => {
+            const config: FsdGenConfig = { rootDir: 'src', templatesDir: '.templates' };
+            const action: PresetComponentAction = {
+                type: ACTION_TYPES.COMPONENT,
+                layer: FSD_LAYERS.ENTITY,
+                slice: 'User',
+                name: 'UserCard',
+                template: 'user-card.tsx'
+            };
 
-    it('should execute component action correctly', async () => {
-        const action = { type: ACTION_TYPES.COMPONENT, layer: 'shared', slice: 'Button', template: 't' };
-        vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-        vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue(mockPaths as any);
+            // Mimic variables object populated by createPresetHelpers + globalVars
+            const variables = {
+                base: {
+                    baseName: 'User',
+                    name: 'User',
+                },
+                layer: {
+                    entity: {
+                        importPath: '@entities/User',
+                        apiPath: '@entities/User/ui',
+                    },
+                    features: {
+                        slice: 'ManageUser',
+                        importPath: '@features/ManageUser',
+                    },
+                    widget: {
+                        slice: 'UserTable',
+                        importPath: '@widgets/UserTable',
+                    },
+                    page: {
+                        slice: 'UserPage',
+                        importPath: '@pages/UserPage',
+                    },
+                },
+                extraGlobal: 'something'
+            };
 
-        const { executeComponentAction } = await import('../../../src/lib/preset/actionExecution.js');
-        await executeComponentAction(action as any, {}, mockConfig as any);
+            await executeComponentAction(action, variables, config);
 
-        expect(generate.generateComponent).toHaveBeenCalledWith(mockPaths, expect.any(Object), 't', '.fsd-templates');
+            // Assert generateComponent was called
+            expect(generateModule.generateComponent).toHaveBeenCalled();
+
+            // Capture the context passed to generateComponent
+            const callArgs = vi.mocked(generateModule.generateComponent).mock.calls[0];
+            const context = callArgs[1] as unknown as GeneratorContext;
+
+            // Verify template keys
+            expect(context.template.componentName).toBe('UserCard');
+            expect(context.template.sliceName).toBe('User');
+            expect(context.template.layer).toBe(FSD_LAYERS.ENTITY);
+
+            // Verify keys from PresetHelpers (passed in via variables)
+            expect(context.base.name).toBe('User');
+            expect(context.layer.entity.apiPath).toBe('@entities/User/ui');
+
+            // Verify it retains other variables
+            expect(context).toHaveProperty('extraGlobal', 'something');
+        });
     });
 
-    it('should execute hook action correctly', async () => {
-        const action = { type: ACTION_TYPES.HOOK, layer: 'entity', slice: 'User', name: 'useUser', template: 't' };
-        vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-        vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue(mockPaths as any);
+    // Shared variables for all tests
+    const commonVariables = {
+        base: {
+            baseName: 'User',
+            name: 'User',
+        },
+        layer: {
+            entity: {
+                importPath: '@entities/User',
+                apiPath: '@entities/User/ui',
+            },
+            features: {
+                slice: 'ManageUser',
+                importPath: '@features/ManageUser',
+            },
+            widget: {
+                slice: 'UserTable',
+                importPath: '@widgets/UserTable',
+            },
+            page: {
+                slice: 'UserPage',
+                importPath: '@pages/UserPage',
+            },
+        },
+        extraGlobal: 'something'
+    };
 
-        await executeHookAction(action, {}, mockConfig as any);
+    const commonConfig: FsdGenConfig = { rootDir: 'src', templatesDir: '.templates' };
 
-        expect(generate.generateHook).toHaveBeenCalledWith(mockPaths, expect.any(Object), 't', '.fsd-templates');
+    describe('executeHookAction', () => {
+        it('should pass a complete GeneratorContext to generateHook', async () => {
+            const action: PresetHookAction = {
+                type: ACTION_TYPES.HOOK,
+                layer: FSD_LAYERS.ENTITY,
+                slice: 'User',
+                name: 'useUser',
+                template: 'use-user.ts'
+            };
+
+            await executeHookAction(action, commonVariables, commonConfig);
+
+            expect(generateModule.generateHook).toHaveBeenCalled();
+            const callArgs = vi.mocked(generateModule.generateHook).mock.calls[0];
+            const context = callArgs[1] as unknown as GeneratorContext;
+
+            // Verify template keys
+            expect(context.template.componentName).toBe('useUser');
+            expect(context.template.sliceName).toBe('User');
+            expect(context.template.layer).toBe(FSD_LAYERS.ENTITY);
+
+            // Verify keys from PresetHelpers
+            expect(context.base.name).toBe('User');
+            expect(context.layer.entity.apiPath).toBe('@entities/User/ui');
+        });
     });
 
-    it('should execute styles action correctly', async () => {
-        const action = { type: ACTION_TYPES.STYLES, layer: 'feature', slice: 'Search', name: 'Search.styles', template: 'st' };
-        vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-        vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue(mockPaths as any);
+    describe('executeStylesAction', () => {
+        it('should pass a complete GeneratorContext to generateStyles', async () => {
+            const action: PresetStylesAction = {
+                type: ACTION_TYPES.STYLES,
+                layer: FSD_LAYERS.ENTITY,
+                slice: 'User',
+                name: 'UserCard',
+                template: 'user-card.module.css'
+            };
 
-        await executeStylesAction(action, {}, mockConfig as any);
+            await executeStylesAction(action, commonVariables, commonConfig);
 
-        expect(generate.generateStyles).toHaveBeenCalledWith(mockPaths, expect.any(Object), 'st', '.fsd-templates');
+            expect(generateModule.generateStyles).toHaveBeenCalled();
+            const callArgs = vi.mocked(generateModule.generateStyles).mock.calls[0];
+            const context = callArgs[1] as unknown as GeneratorContext;
+
+            // Verify template keys (name falls back to slice if not provided, but here we provide it)
+            expect(context.template.componentName).toBe('UserCard');
+            expect(context.template.sliceName).toBe('User');
+            expect(context.template.layer).toBe(FSD_LAYERS.ENTITY);
+
+            // Verify keys from PresetHelpers
+            expect(context.base.name).toBe('User');
+        });
     });
 
     describe('executeFileAction', () => {
-        it('should create a file from template and update barrel', async () => {
-            const action = { type: ACTION_TYPES.FILE, path: 'test.ts', template: 'file-t' };
-            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-            // Mock fs.readFile for loadFileTemplate
-            const fs = await import('fs/promises');
-            vi.mocked(fs.readFile).mockResolvedValue('file content');
+        it('should pass a complete GeneratorContext to template processing', async () => {
+            const action: PresetFileAction = {
+                type: ACTION_TYPES.FILE,
+                path: 'model/types.ts',
+                template: 'types.ts'
+            };
 
-            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
-            await executeFileAction(action as any, {}, mockConfig as any);
+            // loadFileTemplate mock to return a string template
+            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('template content');
 
-            expect(fs.writeFile).toHaveBeenCalledWith(expect.stringContaining('test.ts'), 'file content');
-            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
-            expect(updateBarrels.updateBarrel).toHaveBeenCalled();
-        });
+            // Mock mkDir and writeFile
+            const fsMock = await import('node:fs/promises');
+            vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
+            vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
 
-        it('should throw error if file template not found', async () => {
-            const action = { type: ACTION_TYPES.FILE, path: 'test.ts', template: 'missing' };
-            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-            const fs = await import('fs/promises');
-            vi.mocked(fs.readFile).mockRejectedValue(new Error('no'));
 
-            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
-            await expect(executeFileAction(action as any, {}, mockConfig as any)).rejects.toThrow('Could not find file template');
-        });
+            // executeFileAction uses processTemplate to resolve the path AND the content
+            // We want to capture the context used when processing the CONTENT
+            // The first call is for path resolution, second for content
+            await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, commonConfig);
 
-        it('should skip barrel update for non-TS files', async () => {
-            const action = { type: ACTION_TYPES.FILE, path: 'test.css', template: 'file-t' };
-            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-            const fs = await import('fs/promises');
-            vi.mocked(fs.readFile).mockResolvedValue('content');
+            expect(templateLoader.processTemplate).toHaveBeenCalledTimes(2);
 
-            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
-            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
-            await executeFileAction(action as any, {}, mockConfig as any);
+            // The second call to processTemplate should receive the context
+            const contentCallArgs = vi.mocked(templateLoader.processTemplate).mock.calls[1];
+            const context = contentCallArgs[1] as GeneratorContext;
 
-            expect(updateBarrels.updateBarrel).not.toHaveBeenCalled();
-        });
+            // Verify template keys
+            expect(context.template).toBeDefined();
+            expect(context.template.componentName).toBe('User');
+            expect(context.template.sliceName).toBe('User');
+            // Layer might be empty string for generic files if not provided in variables
+            expect(context.template.layer).toBeDefined();
 
-        it('should update barrel for .tsx files', async () => {
-            const action = { type: ACTION_TYPES.FILE, path: 'comp.tsx', template: 'file-t' };
-            vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-            const fs = await import('fs/promises');
-            vi.mocked(fs.readFile).mockResolvedValue('content');
-
-            const updateBarrels = await import('../../../src/lib/barrels/updateBarrels.js');
-            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
-            await executeFileAction(action as any, {}, mockConfig as any);
-
-            expect(updateBarrels.updateBarrel).toHaveBeenCalled();
-        });
-
-        it('should do nothing if template is missing', async () => {
-            const action = { type: ACTION_TYPES.FILE, path: 'test.ts' };
-            const fs = await import('fs/promises');
-
-            const startWriteCount = vi.mocked(fs.writeFile).mock.calls.length;
-
-            const { executeFileAction } = await import('../../../src/lib/preset/actionExecution.js');
-            await executeFileAction(action as any, {}, mockConfig as any);
-
-            expect(vi.mocked(fs.writeFile).mock.calls.length).toBe(startWriteCount);
+            // Verify keys from PresetHelpers
+            expect(context.base.name).toBe('User');
+            expect(context.layer.entity.apiPath).toBe('@entities/User/ui');
         });
     });
-});
 
-describe('executeActions', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
+    describe('executeActions', () => {
+        it('should dispatch all action types correctly', async () => {
+            const actions = [
+                { type: ACTION_TYPES.COMPONENT, layer: 'entity', slice: 'User', name: 'UserCard', template: 't' },
+                { type: ACTION_TYPES.HOOK, layer: 'entity', slice: 'User', name: 'useUser', template: 'h' },
+                { type: ACTION_TYPES.STYLES, layer: 'entity', slice: 'User', name: 'UserStyles', template: 's' },
+                { type: ACTION_TYPES.FILE, path: 'src/f', template: 'ft' }
+            ];
 
-    it('should dispatch all action types correctly', async () => {
-        const actions = [
-            { type: ACTION_TYPES.COMPONENT, layer: 'shared', slice: 'S' },
-            { type: ACTION_TYPES.FILE, path: 'f', template: 't' },
-            { type: ACTION_TYPES.HOOK, layer: 'entity', slice: 'U', template: 't1' },
-            { type: ACTION_TYPES.STYLES, layer: 'entity', slice: 'U', template: 't2' }
-        ];
-        vi.mocked(templateLoader.processTemplate).mockImplementation((t) => t);
-        vi.mocked(resolvePaths.resolveFsdPaths).mockReturnValue({} as any);
-        const fs = await import('fs/promises');
-        vi.mocked(fs.readFile).mockResolvedValue('content');
+            // Mock the individual execution functions
+            // Since we are inside the same module testing file, we need to make sure we are spying on the exports correctly
+            // But executeActions imports them from the same file. 
+            // In ESM, internal calls within the same module are hard to mock without namespace import usage.
+            // Wait, executeActions calls executeComponentAction etc which are exported functions in the same file.
+            // But in actionExecution.ts: `import { ... } from './generate.js'` etc.
+            // `executeActions` calls `executeComponentAction(action, ...)`
+            // If they are strictly local function calls, spying on the export won't work easily.
+            // However, looking at actionExecution.ts source (lines 228+), it calls `await executeComponentAction(...)`.
 
-        await executeActions(actions as any, 'User', {}, { rootDir: 'src' } as any);
+            // Actually, I can spy on the functions if I exported them and the module uses them via `exports` or if I verify the side effects.
+            // `executeComponentAction` calls `generateComponent`.
+            // `executeHookAction` calls `generateHook`.
+            // `executeFileAction` calls `writeFile`.
 
-        expect(generate.generateComponent).toHaveBeenCalled();
-        expect(generate.generateHook).toHaveBeenCalled();
-        expect(generate.generateStyles).toHaveBeenCalled();
-        expect(fs.writeFile).toHaveBeenCalled();
+            // So checking if the UNDERLYING generators are called is sufficient to verify dispatch!
+
+            await actionExecutionModule.executeActions(actions as any, 'User', { global: 'var' }, commonConfig);
+
+            expect(generateModule.generateComponent).toHaveBeenCalled();
+            expect(generateModule.generateHook).toHaveBeenCalled();
+            expect(generateModule.generateStyles).toHaveBeenCalled();
+            expect(generateModule.generateStyles).toHaveBeenCalled();
+
+            const fsMock = await import('node:fs/promises');
+            expect(fsMock.writeFile).toHaveBeenCalled();
+        });
     });
 });

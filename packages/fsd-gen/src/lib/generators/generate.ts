@@ -126,8 +126,8 @@ export async function generateComponent(
   templatesDir?: string
 ) {
   // Step 1: Resolve template type
-  const { templatePath, layerArg } = resolveTemplateType(context.layer, templateOverride);
-  console.log(`Using template: ${templateOverride ? templatePath : context.layer + '/' + templatePath}`);
+  const { templatePath, layerArg } = resolveTemplateType(context.template.layer, templateOverride);
+  console.log(`Using template: ${templateOverride ? templatePath : context.template.layer + '/' + templatePath}`);
 
   // Step 2: Get templates directory
   const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;

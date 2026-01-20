@@ -3,6 +3,7 @@ import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { createJiti } from 'jiti';
 import { TEMPLATE_FILES, PRESET_DIRS } from '../constants.js';
+import { TemplateContext } from '../../config/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,7 +53,7 @@ export async function findTemplateDir(
  * Read the component template file
  * Supports .tsx, .ts, .js for dynamic templates, falls back to static string reading
  */
-export async function readComponentTemplate(templateDir: string): Promise<string | ((context: any) => string)> {
+export async function readComponentTemplate(templateDir: string): Promise<string | ((context: TemplateContext) => string)> {
     // Try to find dynamic template files
     const extensions = ['.tsx', '.ts', '.js'];
     const baseName = TEMPLATE_FILES.COMPONENT.replace('.tsx', ''); // Removing extension if present in constant to try different ones
@@ -81,7 +82,7 @@ export async function readComponentTemplate(templateDir: string): Promise<string
  * Read the styles template file (optional)
  * @returns The styles content or empty string if not found
  */
-export async function readStylesTemplate(templateDir: string): Promise<string | ((context: any) => string)> {
+export async function readStylesTemplate(templateDir: string): Promise<string | ((context: TemplateContext) => string)> {
     // Try to find dynamic template files
     const extensions = ['.ts', '.js'];
 
@@ -117,7 +118,7 @@ export async function loadTemplate(
     layer: string,
     type: string = 'ui',
     customTemplatesDir?: string
-): Promise<{ component: string | ((context: any) => string); styles: string | ((context: any) => string) }> {
+): Promise<{ component: string | ((context: TemplateContext) => string); styles: string | ((context: TemplateContext) => string) }> {
     const searchDirs = resolveTemplateDirs(customTemplatesDir);
     const templateDir = await findTemplateDir(layer, type, searchDirs);
 
@@ -133,9 +134,9 @@ export async function loadTemplate(
     return { component, styles };
 }
 
-export function processTemplate(content: string | ((context: any) => string), variables: Record<string, any>): string {
+export function processTemplate(content: string | ((context: TemplateContext) => string), variables: Record<string, any> | TemplateContext): string {
     if (typeof content === 'function') {
-        return content(variables);
+        return content(variables as TemplateContext);
     }
     return content.replace(/\{\s*\{\s*(\w+)\s*\}\s*\}/g, (_, key) => String(variables[key] ?? ''));
 }

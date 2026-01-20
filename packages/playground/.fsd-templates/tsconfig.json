@@ -1,0 +1,18 @@
+{
+    "extends": "../tsconfig.app.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@starodubenko/fsd-gen": [
+                "../../fsd-gen/src/index.ts"
+            ],
+            "*": [
+                "./*"
+            ]
+        },
+        "noEmit": true
+    },
+    "include": [
+        "**/*"
+    ]
+}

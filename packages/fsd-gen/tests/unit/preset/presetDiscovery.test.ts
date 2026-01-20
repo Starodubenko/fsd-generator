@@ -58,7 +58,7 @@ describe('presetDiscovery', () => {
             const actions = await discoverTemplates(presetDir, 'table', 'User');
             const featureAction = actions.find(a => (a as any).layer === FSD_LAYERS.FEATURE) as any;
             expect(featureAction).toBeDefined();
-            expect(featureAction.name).toBe('CreateUserButton');
+            expect(featureAction.name).toBe('CreateUser');
         });
 
         it('should identify page templates as COMPONENT actions', async () => {
@@ -146,6 +146,32 @@ describe('presetDiscovery', () => {
             expect(action).toBeDefined();
         });
 
+        it('should discover widget actions from any directory name', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+            vi.mocked(fs.readdir).mockImplementation(async (path) => {
+                if (String(path).endsWith('widget')) return [{ name: 'custom-widget', isDirectory: () => true, isFile: () => false }] as any;
+                return [];
+            });
+
+            const actions = await discoverTemplates('p', 'table', 'User');
+            const action = actions.find(a => (a as any).layer === 'widget');
+            expect((action as any).template).toContain('custom-widget');
+            expect((action as any).slice).toBe('UserTable'); // Default suffix 'Table' if not overridden, but template path uses dir name
+        });
+
+        it('should discover page actions from any directory name', async () => {
+            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+            vi.mocked(fs.readdir).mockImplementation(async (path) => {
+                if (String(path).endsWith('page')) return [{ name: 'ui', isDirectory: () => true, isFile: () => false }] as any;
+                return [];
+            });
+
+            const actions = await discoverTemplates('p', 'table', 'User');
+            const action = actions.find(a => (a as any).layer === 'page');
+            expect((action as any).template).toContain('ui');
+            expect((action as any).slice).toBe('UserPage');
+        });
+
         it('should use default conventions for widget table', async () => {
             vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
             vi.mocked(fs.readdir).mockImplementation(async (path) => {
@@ -179,18 +205,35 @@ describe('presetDiscovery', () => {
             expect(buttonActions.length).toBe(0);
         });
 
-        it('should ignore non-matching directories in feature, widget, and page layers', async () => {
+        it('should handle empty directories in feature layer (no sub-components)', async () => {
             const presetDir = 'presets/test';
             vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
             vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('feature')) return [{ name: 'random-feature', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('widget')) return [{ name: 'random-widget', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('page')) return [{ name: 'random-page', isDirectory: () => true, isFile: () => false }] as any;
+                if (String(path).endsWith('feature')) return [{ name: 'random-dir', isDirectory: () => true, isFile: () => false }] as any;
+                // random-dir returns empty list by default fallback
                 return [];
             });
 
             const actions = await discoverTemplates(presetDir, 'test', 'User');
+            // Should be empty because random-dir contains no sub-directories
             expect(actions.length).toBe(0);
+        });
+
+        it('should correctly construct generic widget/page template paths', async () => {
+            const presetDir = 'presets/test';
+            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+            vi.mocked(fs.readdir).mockImplementation(async (path) => {
+                if (String(path).endsWith('widget')) return [{ name: 'my-widget', isDirectory: () => true, isFile: () => false }] as any;
+                if (String(path).endsWith('page')) return [{ name: 'my-page', isDirectory: () => true, isFile: () => false }] as any;
+                return [];
+            });
+
+            const actions = await discoverTemplates(presetDir, 'test', 'User');
+            const widgetAction = actions.find(a => (a as any).layer === 'widget') as any;
+            const pageAction = actions.find(a => (a as any).layer === 'page') as any;
+
+            expect(widgetAction.template).toMatch(/preset\/test\/widget\/my-widget$/);
+            expect(pageAction.template).toMatch(/preset\/test\/page\/my-page$/);
         });
     });
 

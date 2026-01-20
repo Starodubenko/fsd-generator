@@ -1,13 +1,28 @@
-import styled from '@emotion/styled';
-import { {{componentName}}, mock{{componentName}}Data } from '../../../entities/{{componentName}}/model';
-import { Create{{componentName}}Button, Edit{{componentName}}Button, Delete{{componentName}}Button } from '../../../features/Manage{{componentName}}/ui/Manage{{componentName}}';
+import type { GeneratorContext } from '../../../../src/config/types.js';
 
-const TableWrapper = styled.div`
+export default (ctx: GeneratorContext) => {
+  const {
+      base: { baseName },
+      template: { componentName },
+      layer: {
+          entity: { apiPath: entityApiPath },
+          features: { importPath: featureImportPath }
+      }
+  } = ctx;
+
+  return `
+import styled from '@emotion/styled';
+import { ${baseName}, mock${baseName}Data } from '${entityApiPath}';
+// Note: Assuming specific button names based on feature convention, or should be generic?
+// For the Table preset, it assumes Create/Edit/Delete buttons exist in the feature slice.
+import { Create${baseName}Button, Edit${baseName}Button, Delete${baseName}Button } from '${featureImportPath}';
+
+const TableWrapper = styled.div\`
   border: 1px solid #eee;
   padding: 1rem;
-`;
+\`;
 
-const Table = styled.table`
+const Table = styled.table\`
   width: 100%;
   border-collapse: collapse;
   
@@ -16,13 +31,13 @@ const Table = styled.table`
     padding: 8px;
     text-align: left;
   }
-`;
+\`;
 
-export const {{componentName}}Table = () => {
+export const ${componentName} = () => {
   return (
     <TableWrapper>
       <div style={{ marginBottom: '1rem' }}>
-        <Create{{componentName}}Button />
+        <Create${baseName}Button />
       </div>
       <Table>
         <thead>
@@ -33,13 +48,13 @@ export const {{componentName}}Table = () => {
           </tr>
         </thead>
         <tbody>
-          {mock{{componentName}}Data.map((item) => (
+          {mock${baseName}Data.map((item) => (
             <tr key={item.id}>
               <td>{item.id}</td>
               <td>{item.name}</td>
               <td>
-                <Edit{{componentName}}Button />
-                <Delete{{componentName}}Button />
+                <Edit${baseName}Button />
+                <Delete${baseName}Button />
               </td>
             </tr>
           ))}
@@ -47,4 +62,6 @@ export const {{componentName}}Table = () => {
       </Table>
     </TableWrapper>
   );
+};
+`;
 };

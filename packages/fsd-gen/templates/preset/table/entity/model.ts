@@ -1,9 +1,15 @@
-export interface { { componentName } } {
+import type { GeneratorContext } from '../../../../src/config/types.js';
+
+export default (ctx: GeneratorContext) => {
+    const { base: { baseName } } = ctx;
+    return `export interface ${baseName} {
     id: string;
     name: string;
 }
 
-export const mock{{ componentName }}Data: { { componentName } } [] = [
-    { id: '1', name: 'Test {{componentName}} 1' },
-    { id: '2', name: 'Test {{componentName}} 2' },
+export const mock${baseName}Data: ${baseName}[] = [
+    { id: '1', name: 'Test ${baseName} 1' },
+    { id: '2', name: 'Test ${baseName} 2' },
 ];
+`;
+};

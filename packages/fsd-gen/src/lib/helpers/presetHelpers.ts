@@ -4,35 +4,7 @@
  * Provides utility functions for creating preset helpers that standardize naming conventions,
  * path resolution, and variable generation for preset authors.
  */
-import { FsdGenConfig } from '../../config/types.js';
-
-export interface PresetHelpers {
-    /** Base name (same as input name) */
-    baseName: string;
-    /** Import path for entity layer (with or without alias) */
-    entityImportPath: string;
-    /** Feature slice name (e.g., 'ManageUser') */
-    featureSlice: string;
-    /** Import path for feature layer */
-    featureImportPath: string;
-    /** Widget slice name (e.g., 'UserTable') */
-    widgetSlice: string;
-    /** Import path for widget layer */
-    widgetImportPath: string;
-    /** Page slice name (e.g., 'UserPage') */
-    pageSlice: string;
-    /** Import path for page layer */
-    pageImportPath: string;
-}
-
-export interface PresetHelperOptions {
-    /** Prefix for feature slice names (default: 'Manage') */
-    featurePrefix?: string;
-    /** Suffix for widget slice names (default: 'Table') */
-    widgetSuffix?: string;
-    /** Suffix for page slice names (default: 'Page') */
-    pageSuffix?: string;
-}
+import type { FsdGenConfig, PresetHelpers, PresetHelperOptions } from '../../config/types.js';
 
 /**
  * Helper function to resolve import paths and slice names for presets.
@@ -61,7 +33,7 @@ export function createPresetHelpers(
 ): PresetHelpers {
     const {
         featurePrefix = 'Manage',
-        widgetSuffix = 'Table',
+        widgetSuffix = '',
         pageSuffix = 'Page'
     } = options;
 
@@ -74,6 +46,8 @@ export function createPresetHelpers(
     const entityImportPath = hasEntAlias
         ? `@entities/${name}`
         : `../../../entities/${name}`;
+
+    const apiImportPath = `${entityImportPath}/ui`;
 
     const featureSlice = `${featurePrefix}${name}`;
     const featureImportPath = hasFeatAlias
@@ -91,13 +65,27 @@ export function createPresetHelpers(
         : `../../../pages/${pageSlice}`;
 
     return {
-        baseName: name,
-        entityImportPath,
-        featureSlice,
-        featureImportPath,
-        widgetSlice,
-        widgetImportPath,
-        pageSlice,
-        pageImportPath
+        base: {
+            baseName: name,
+            name,
+        },
+        layer: {
+            entity: {
+                importPath: entityImportPath,
+                apiPath: apiImportPath,
+            },
+            features: {
+                slice: featureSlice,
+                importPath: featureImportPath,
+            },
+            widget: {
+                slice: widgetSlice,
+                importPath: widgetImportPath,
+            },
+            page: {
+                slice: pageSlice,
+                importPath: pageImportPath,
+            },
+        },
     };
 }

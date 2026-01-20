@@ -97,7 +97,7 @@ export interface PresetConfig {
     /** Optional discovery mode ('auto' = scan directories, 'manual' = use actions array) */
     discoveryMode?: (typeof DISCOVERY_MODES)[keyof typeof DISCOVERY_MODES];
     /** Global variables available in all templates */
-    variables?: Record<string, string>;
+    variables?: Record<string, any>;
     /** Manual action definitions (required when discoveryMode is 'manual' or undefined) */
     actions?: PresetAction[];
     /** Convention overrides for auto-discovery mode */
@@ -126,6 +126,63 @@ export function definePreset(config: PresetConfig | PresetConfigFn): PresetConfi
 export interface TemplateContext extends Record<string, any> {
     componentName: string;
     sliceName: string;
-    layer: string;
+    template: {
+        componentName: string;
+        sliceName: string;
+        layer: string;
+    };
 }
 
+
+
+export interface PresetHelpers {
+    base: {
+        /** Base name (same as input name) */
+        name: string;
+        /** Base name alias */
+        baseName: string;
+    };
+    layer: {
+        entity: {
+            /** Import path for entity layer (with or without alias) */
+            importPath: string;
+            /** Import path for entity API (usually /ui or /api) */
+            apiPath: string;
+        };
+        features: {
+            /** Feature slice name */
+            slice: string;
+            /** Import path for feature layer */
+            importPath: string;
+        };
+        widget: {
+            /** Widget slice name */
+            slice: string;
+            /** Import path for widget layer */
+            importPath: string;
+        };
+        page: {
+            /** Page slice name */
+            slice: string;
+            /** Import path for page layer */
+            importPath: string;
+        };
+    };
+}
+
+export interface PresetHelperOptions {
+    /** Prefix for feature slice names (default: 'Manage') */
+    featurePrefix?: string;
+    /** Suffix for widget slice names (default: 'Table') */
+    widgetSuffix?: string;
+    /** Suffix for page slice names (default: 'Page') */
+    pageSuffix?: string;
+}
+
+export interface GeneratorContext extends PresetHelpers, Record<string, any> {
+    template: {
+        componentName: string;
+        sliceName: string;
+        layer: string;
+    };
+}

@@ -13,7 +13,7 @@ import { ACTION_TYPES, FILE_EXTENSIONS } from '../constants.js';
 import { generateComponent, generateHook, generateStyles } from '../generators/generate.js';
 import { resolveFsdPaths } from '../naming/resolvePaths.js';
 import { processTemplate } from '../templates/templateLoader.js';
-import { PresetAction, PresetComponentAction, PresetFileAction, FsdGenConfig } from '../../config/types.js';
+import { PresetAction, PresetComponentAction, PresetFileAction, FsdGenConfig, TemplateContext } from '../../config/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,7 +57,11 @@ export async function executeComponentAction(
         ...variables,
         componentName,
         sliceName,
-        layer: action.layer,
+        template: {
+            componentName,
+            sliceName,
+            layer: action.layer,
+        },
     };
 
     await generateComponent(paths, context, action.template, config.templatesDir);
@@ -85,7 +89,11 @@ export async function executeHookAction(
         ...variables,
         componentName,
         sliceName,
-        layer: action.layer,
+        template: {
+            componentName,
+            sliceName,
+            layer: action.layer,
+        },
     };
 
     await generateHook(paths, context, action.template, config.templatesDir);
@@ -113,7 +121,11 @@ export async function executeStylesAction(
         ...variables,
         componentName,
         sliceName,
-        layer: action.layer,
+        template: {
+            componentName,
+            sliceName,
+            layer: action.layer,
+        },
     };
 
     await generateStyles(paths, context, action.template, config.templatesDir);
@@ -125,7 +137,7 @@ export async function executeStylesAction(
 export async function loadFileTemplate(
     templatePath: string,
     customTemplatesDir?: string
-): Promise<string | ((context: any) => string)> {
+): Promise<string | ((context: TemplateContext) => string)> {
     const internalTemplatesDir = join(__dirname, '../../../templates');
     const pathsToCheck = [];
 
@@ -139,7 +151,7 @@ export async function loadFileTemplate(
             // Try loading as a module first if it's a TS/JS file
             if (p.endsWith('.ts') || p.endsWith('.tsx') || p.endsWith('.js')) {
                 try {
-                    const module = await jiti.import(p) as { default: (context: any) => string };
+                    const module = await jiti.import(p) as { default: (context: TemplateContext) => string };
                     if (typeof module.default === 'function') {
                         console.log(`Loaded file template (module) from: ${p}`);
                         return module.default;
@@ -177,8 +189,17 @@ export async function executeFileAction(
     await mkdir(dirname(targetPath), { recursive: true });
 
     if (action.template) {
+        const context = {
+            ...variables,
+            template: {
+                componentName: variables.componentName,
+                sliceName: variables.sliceName || '',
+                layer: typeof variables.layer === 'string' ? variables.layer : '',
+            },
+        };
+
         const content = await loadFileTemplate(action.template, config.templatesDir);
-        const processed = processTemplate(content, variables);
+        const processed = processTemplate(content, context);
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);
 

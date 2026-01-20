@@ -12,7 +12,7 @@
  */
 import { readdir, stat } from 'fs/promises';
 import type { Dirent } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
 import { PresetAction, PresetComponentAction, PresetFileAction, ConventionConfig } from '../../config/types.js';
 import {
     LAYER_PLURALS,
@@ -111,26 +111,29 @@ export async function createEntityApiActions(
 /**
  * Create component actions for feature buttons
  */
-export async function createFeatureButtonActions(
-    buttonsDir: string,
+/**
+ * Create component actions for feature sub-components (grouped by directory)
+ */
+export async function createFeatureActions(
+    featureDir: string,
     entityName: string,
     presetName: string,
     conventions: ConventionConfig
 ): Promise<PresetAction[]> {
     const actions: PresetAction[] = [];
     const featurePrefix = conventions.featureSlicePrefix ?? 'Manage';
-    const buttonEntries = await readdir(buttonsDir, { withFileTypes: true });
+    const featureEntries = await readdir(featureDir, { withFileTypes: true });
 
-    for (const buttonEntry of buttonEntries) {
-        if (buttonEntry.isDirectory()) {
-            const buttonType = buttonEntry.name; // create, edit, delete
-            const capitalizedType = buttonType.charAt(0).toUpperCase() + buttonType.slice(1);
+    for (const featureEntry of featureEntries) {
+        if (featureEntry.isDirectory()) {
+            const featureName = featureEntry.name;
+            const capitalizedName = featureName.charAt(0).toUpperCase() + featureName.slice(1);
             actions.push({
                 type: ACTION_TYPES.COMPONENT,
                 layer: FSD_LAYERS.FEATURE,
                 slice: `${featurePrefix}${entityName}`,
-                name: `${capitalizedType}${entityName}Button`,
-                template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.FEATURE}/${PRESET_DIRS.BUTTONS}/${buttonEntry.name}`
+                name: `${capitalizedName}${entityName}`,
+                template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.FEATURE}/${basename(featureDir)}/${featureEntry.name}`
             });
         }
     }
@@ -139,12 +142,13 @@ export async function createFeatureButtonActions(
 }
 
 /**
- * Create component action for widget table
+ * Create component action for widget
  */
-export function createWidgetTableAction(
+export function createWidgetAction(
     entityName: string,
     presetName: string,
-    conventions: ConventionConfig
+    conventions: ConventionConfig,
+    templateDir: string
 ): PresetComponentAction {
     const widgetSuffix = conventions.widgetSliceSuffix ?? 'Table';
 
@@ -153,17 +157,21 @@ export function createWidgetTableAction(
         layer: FSD_LAYERS.WIDGET,
         slice: `${entityName}${widgetSuffix}`,
         name: `${entityName}${widgetSuffix}`,
-        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.WIDGET}/${PRESET_DIRS.TABLE}`
+        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.WIDGET}/${templateDir}`
     };
 }
 
 /**
  * Create component action for page
  */
+/**
+ * Create component action for page
+ */
 export function createPageAction(
     entityName: string,
     presetName: string,
-    conventions: ConventionConfig
+    conventions: ConventionConfig,
+    templateDir: string
 ): PresetComponentAction {
     const pageSuffix = conventions.pageSliceSuffix ?? 'Page';
 
@@ -172,7 +180,7 @@ export function createPageAction(
         layer: FSD_LAYERS.PAGE,
         slice: `${entityName}${pageSuffix}`,
         name: `${entityName}${pageSuffix}`,
-        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.PAGE}/${FSD_LAYERS.PAGE}`
+        template: `${PRESET_DIRS.ROOT}/${presetName}/${FSD_LAYERS.PAGE}/${templateDir}`
     };
 }
 
@@ -233,19 +241,21 @@ export async function discoverTemplates(
                 }
 
                 // Feature layer
-                else if (layer === FSD_LAYERS.FEATURE && entry.name === PRESET_DIRS.BUTTONS) {
-                    const buttonActions = await createFeatureButtonActions(fullPath, entityName, presetName, conventions);
-                    actions.push(...buttonActions);
+                // Feature layer
+                else if (layer === FSD_LAYERS.FEATURE) {
+                    // Treat any directory in feature layer as a potential specific feature group
+                    const featureActions = await createFeatureActions(fullPath, entityName, presetName, conventions);
+                    actions.push(...featureActions);
                 }
 
                 // Widget layer
-                else if (layer === FSD_LAYERS.WIDGET && entry.name === PRESET_DIRS.TABLE) {
-                    actions.push(createWidgetTableAction(entityName, presetName, conventions));
+                else if (layer === FSD_LAYERS.WIDGET) {
+                    actions.push(createWidgetAction(entityName, presetName, conventions, entry.name));
                 }
 
                 // Page layer
-                else if (layer === FSD_LAYERS.PAGE && entry.name === FSD_LAYERS.PAGE) {
-                    actions.push(createPageAction(entityName, presetName, conventions));
+                else if (layer === FSD_LAYERS.PAGE) {
+                    actions.push(createPageAction(entityName, presetName, conventions, entry.name));
                 }
 
                 // Shared layer

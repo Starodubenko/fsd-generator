@@ -1,4 +1,4 @@
-import { FsdGenConfig } from './types.js';
+import type { FsdGenConfig } from './types.js';
 
 /**
  * Define configuration for fsd-gen.

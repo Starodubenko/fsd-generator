@@ -152,7 +152,11 @@ describe('generate', () => {
                 modelPath: 'src/entities/User/model',
                 apiPath: 'src/entities/User/api'
             };
-            const context = { componentName: 'useUser', sliceName: 'User', layer: 'entity' };
+            const context = {
+                componentName: 'useUser',
+                sliceName: 'User',
+                template: { layer: 'entity', componentName: 'useUser', sliceName: 'User' }
+            };
             const templatePath = 'api/get';
 
             vi.mocked(templateLoader.loadTemplate).mockResolvedValue({ component: 'hook content', styles: '' });
@@ -180,7 +184,11 @@ describe('generate', () => {
                 modelPath: 'src/features/Auth/model',
                 apiPath: 'src/features/Auth/api'
             };
-            const context = { componentName: 'LoginForm', sliceName: 'Auth', layer: 'feature' };
+            const context = {
+                componentName: 'LoginForm',
+                sliceName: 'Auth',
+                template: { layer: 'feature', componentName: 'LoginForm', sliceName: 'Auth' }
+            };
             const templatePath = 'ui/styles';
 
             vi.mocked(templateLoader.loadTemplate).mockResolvedValue({ component: '', styles: 'styles content' });
@@ -195,7 +203,11 @@ describe('generate', () => {
 
         it('should skip writing styles file if content is empty', async () => {
             const paths = { slicePath: 's', uiPath: 'u', componentPath: 'c' };
-            const context = { componentName: 'C', sliceName: 'S', layer: 'feature' };
+            const context = {
+                componentName: 'C',
+                sliceName: 'S',
+                template: { layer: 'feature', componentName: 'C', sliceName: 'S' }
+            };
 
             vi.mocked(templateLoader.loadTemplate).mockResolvedValue({ component: '', styles: '' });
             vi.mocked(templateLoader.processTemplate).mockReturnValue('');
@@ -225,7 +237,12 @@ describe('generate', () => {
 
             await generateComponent(
                 { layerPath: 'l', slicePath: 's', uiPath: 'u', componentPath: 'p' },
-                { layer: 'shared', componentName: 'C', sliceName: 'S' }
+                {
+                    layer: 'shared',
+                    componentName: 'C',
+                    sliceName: 'S',
+                    template: { layer: 'shared', componentName: 'C', sliceName: 'S' }
+                } as any
             );
 
             expect(templateLoader.loadTemplate).toHaveBeenCalledWith('shared', expect.any(String), 't');
@@ -241,7 +258,11 @@ describe('generate', () => {
                 modelPath: 'src/features/Auth/model',
                 apiPath: 'src/features/Auth/api'
             };
-            const context = { componentName: 'LoginForm', sliceName: 'Auth', layer: 'feature' };
+            const context = {
+                componentName: 'LoginForm',
+                sliceName: 'Auth',
+                template: { layer: 'feature', componentName: 'LoginForm', sliceName: 'Auth' }
+            };
 
             vi.mocked(templateLoader.loadTemplate).mockResolvedValue({ component: 'c', styles: 's' });
             vi.mocked(templateLoader.processTemplate).mockImplementation(t => `processed ${t}`);
@@ -260,7 +281,12 @@ describe('generate', () => {
 
             await generateComponent(
                 { layerPath: 'l', slicePath: 's', uiPath: 'u', componentPath: 'p' },
-                { layer: 'shared', componentName: 'C', sliceName: 'S' },
+                {
+                    layer: 'shared',
+                    componentName: 'C',
+                    sliceName: 'S',
+                    template: { layer: 'shared', componentName: 'C', sliceName: 'S' }
+                } as any,
                 'custom/template'
             );
 
