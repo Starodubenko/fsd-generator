@@ -11,7 +11,7 @@
  * Converts the file system structure of a preset into a list of executable generator actions.
  */
 import { readdir, stat } from 'fs/promises';
-import type { Dirent } from 'fs';
+import { existsSync, Dirent } from 'fs';
 import { join, basename } from 'path';
 import { PresetAction, PresetComponentAction, PresetFileAction, ConventionConfig } from '../../config/types.js';
 import {
@@ -204,6 +204,48 @@ export function createSharedAction(
 }
 
 /**
+ * Discover extra files in a component directory (like hooks, styles, etc.)
+ */
+async function discoverExtraFiles(
+    dir: string,
+    layer: string,
+    sliceName: string,
+    segment: string,
+    presetName: string,
+    mainComponentFile?: string
+): Promise<PresetAction[]> {
+    const actions: PresetAction[] = [];
+    const entries = await readdir(dir, { withFileTypes: true });
+    const layerPlural = LAYER_PLURALS[layer] || 'pages';
+
+    const componentPatterns = [
+        'Component.tsx',
+        '{{name}}.tsx',
+        '{{entityName}}.tsx',
+        '{{name}}Widget.tsx',
+        '{{name}}Page.tsx',
+        '{{name}}Feature.tsx'
+    ];
+
+    for (const entry of entries) {
+        if (entry.isFile()) {
+            if (entry.name === mainComponentFile) continue;
+            if (componentPatterns.includes(entry.name)) continue;
+
+            // Ignore styles if they are likely handled by COMPONENT action
+            if (entry.name === 'Component.styles.ts' || entry.name.includes('.styles.ts')) continue;
+
+            actions.push({
+                type: ACTION_TYPES.FILE,
+                path: `${layerPlural}/${sliceName}/${segment}/${entry.name}`,
+                template: `${PRESET_DIRS.ROOT}/${presetName}/${layer}/${segment}/${entry.name}`
+            });
+        }
+    }
+    return actions;
+}
+
+/**
  * Auto-discover templates in a preset directory based on conventions
  * Orchestrates scanning all layers and creating appropriate actions
  */
@@ -217,53 +259,37 @@ export async function discoverTemplates(
     const layers = ['entity', 'feature', 'widget', 'page', 'shared'] as const;
 
     for (const layer of layers) {
-        const entries = await scanLayerDirectory(presetDir, layer);
+        const layerDir = join(presetDir, layer);
+        if (!existsSync(layerDir)) continue;
 
-        for (const entry of entries) {
-            const fullPath = join(presetDir, layer, entry.name);
+        const layerPlural = LAYER_PLURALS[layer] || 'pages';
 
-            // Check for .ts files (file actions)
-            if (entry.isFile() && entry.name.endsWith(FILE_EXTENSIONS.TYPESCRIPT)) {
-                actions.push(createFileAction(entry, layer, entityName, presetName));
-            }
+        // Determine slice name pattern for this layer
+        let layerSliceName = entityName;
+        if (layer === FSD_LAYERS.WIDGET) layerSliceName = `${entityName}${conventions.widgetSliceSuffix ?? 'Widget'}`;
+        else if (layer === FSD_LAYERS.PAGE) layerSliceName = `${entityName}${conventions.pageSliceSuffix ?? 'Page'}`;
+        else if (layer === FSD_LAYERS.FEATURE) layerSliceName = `${conventions.featureSlicePrefix ?? 'Manage'}${entityName}`;
 
-            // Check for directories (component actions)
-            if (entry.isDirectory()) {
+        const scanRecursive = async (currentDir: string, relPath: string = '') => {
+            const entries = await readdir(currentDir, { withFileTypes: true });
 
-                // Entity layer
-                if (layer === FSD_LAYERS.ENTITY) {
-                    if (entry.name === FSD_SEGMENTS.UI) {
-                        actions.push(createEntityUiAction(entityName, presetName));
-                    } else if (entry.name === FSD_SEGMENTS.API) {
-                        const apiActions = await createEntityApiActions(fullPath, entityName, presetName);
-                        actions.push(...apiActions);
-                    }
-                }
+            for (const entry of entries) {
+                const entryRelPath = join(relPath, entry.name);
+                const fullPath = join(currentDir, entry.name);
 
-                // Feature layer
-                // Feature layer
-                else if (layer === FSD_LAYERS.FEATURE) {
-                    // Treat any directory in feature layer as a potential specific feature group
-                    const featureActions = await createFeatureActions(fullPath, entityName, presetName, conventions);
-                    actions.push(...featureActions);
-                }
-
-                // Widget layer
-                else if (layer === FSD_LAYERS.WIDGET) {
-                    actions.push(createWidgetAction(entityName, presetName, conventions, entry.name));
-                }
-
-                // Page layer
-                else if (layer === FSD_LAYERS.PAGE) {
-                    actions.push(createPageAction(entityName, presetName, conventions, entry.name));
-                }
-
-                // Shared layer
-                else if (layer === FSD_LAYERS.SHARED) {
-                    actions.push(createSharedAction(entry.name, entityName, presetName));
+                if (entry.isDirectory()) {
+                    await scanRecursive(fullPath, entryRelPath);
+                } else if (entry.isFile()) {
+                    actions.push({
+                        type: ACTION_TYPES.FILE,
+                        path: `${layerPlural}/${layerSliceName}/${entryRelPath}`,
+                        template: `${PRESET_DIRS.ROOT}/${presetName}/${layer}/${entryRelPath}`
+                    });
                 }
             }
-        }
+        };
+
+        await scanRecursive(layerDir);
     }
 
     return actions;

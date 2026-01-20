@@ -1,42 +1,42 @@
 # FSD-GEN  
-## CLI-генератор React-компонентов по Feature-Sliced Design
+## CLI Generator for React Components via Feature-Sliced Design
 
 ---
 
-## 1. Назначение
+## 1. Purpose
 
-`fsd-gen` — CLI-генератор React-компонентов для проектов, использующих архитектуру **Feature-Sliced Design (FSD)**.
+`fsd-gen` is a CLI generator for React components in projects using the **Feature-Sliced Design (FSD)** architecture.
 
-Цели генератора:
-- ускорить создание новых компонентов
-- обеспечить единообразную архитектуру
-- исключить ручные ошибки в структуре проекта
-- автоматизировать рутину (шаблоны, импорты, barrel-файлы)
-- навязать архитектурную дисциплину
+Generator Goals:
+- Speed up the creation of new components
+- Ensure a consistent architecture
+- Eliminate manual errors in the project structure
+- Automate routine tasks (templates, imports, barrel files)
+- Enforce architectural discipline
 
 ---
 
-## 2. Технологические требования
+## 2. Technical Requirements
 
-### Используемые технологии
+### Technologies Used
 - Node.js ≥ 18
 - React + TypeScript
 - `@emotion/styled`
 
-### Ограничения (обязательно)
+### Restrictions (Mandatory)
 - ❌ Material UI
 - ❌ CSS / SCSS / CSS Modules
 - ❌ `css()` helpers
 - ❌ inline styles
 
-### Разрешено
-- только `styled.div\`...\`` (template literals)
-- строгая типизация
-- `Record<Variant, string>` для variants
+### Allowed
+- only `styled.div\`...\`` (template literals)
+- strict typing
+- `Record<Variant, string>` for variants
 
 ---
 
-## 3. Архитектура генератора
+## 3. Generator Architecture
 
 ```
 fsd-gen/
@@ -69,11 +69,11 @@ fsd-gen/
 
 ---
 
-## 4. Конфигурация генератора
+## 4. Generator Configuration
 
-### 4.1 Формат конфигурации
+### 4.1 Configuration Format
 
-В корне проекта:
+In the project root:
 
 ```ts
 import { defineConfig } from "fsd-gen";
@@ -83,86 +83,86 @@ export default defineConfig({
 });
 ```
 
-### 4.2 Поддержка TypeScript
+### 4.2 TypeScript Support
 
-- Конфиг `fsdgen.config.ts` поддерживается через **опциональный `tsx`**
-- Если `tsx` не установлен — генератор выдаёт понятную ошибку
+- `fsdgen.config.ts` is supported via **optional `tsx`**
+- If `tsx` is not installed, the generator provides a clear error message
 
-### 4.3 Приоритет настроек
+### 4.3 Settings Priority
 
-1. Ответы пользователя в CLI  
-2. Конфиг проекта  
-3. Дефолты генератора  
+1. CLI user answers
+2. Project config
+3. Generator defaults
 
 ---
 
-## 5. Основные возможности
+## 5. Main Features
 
 ### 5.1 Dependency Graph
 
-Генератор строит граф зависимостей между слоями:
+The generator builds a dependency graph between layers:
 
 ```
 entity → feature → widget → page
 ```
 
-Каждый узел:
-- слой
+Each node:
+- layer
 - slice
-- имя компонента
-- шаблон
+- component name
+- template
 
-Используется для правильного порядка генерации и передачи зависимостей в шаблоны.
+Used for the correct generation order and passing dependencies to templates.
 
 ---
 
 ### 5.2 Alias-awareness
 
-Автоматическая работа с алиасами импортов.
+Automatic handling of import aliases.
 
-Источники:
-1. manual aliases из конфига
+Sources:
+1. manual aliases from config
 2. tsconfig paths
 3. fallback `@/` → rootDir
 
 ---
 
-### 5.3 Автообновление barrel-файлов
+### 5.3 Auto-updating barrel files
 
-Генератор автоматически:
-- создаёт `index.ts`
-- добавляет export
-- не дублирует существующие
+The generator automatically:
+- creates `index.ts`
+- adds exports
+- avoids duplicates
 
 ---
 
 ### 5.4 Naming Policy Enforcement
 
-Контроль:
-- имён компонентов
-- slice
-- суффиксов (`Page`, `Widget`)
+Control of:
+- component names
+- slices
+- suffixes (`Page`, `Widget`)
 - variants
 
-Режимы: `error | warn | autoFix`
+Modes: `error | warn | autoFix`
 
 ---
 
 ### 5.5 Preview / Explain Mode
 
-Перед генерацией показывается:
-- список файлов
-- порядок
-- зависимости
-- конфликты
+Before generation, it shows:
+- file list
+- order
+- dependencies
+- conflicts
 
-Dry-run ничего не пишет на диск.
+Dry-run does not write anything to disk.
 
 ---
 
 ### 5.6 Interactive Rename
 
-При конфликтах:
+During conflicts:
 - ask
 - rename
 - merge
@@ -170,9 +170,45 @@ Dry-run ничего не пишет на диск.
 
 ---
 
-## 6. Шаблоны генерации
+---
 
-Каждый UI-шаблон создаёт:
+### 5.7 Reverse Preset Generation
+
+The generator allows turning existing code (Etalon) into reusable presets.
+
+Commands:
+1. `reverse:init <name> [--mode short|ejected]` — workspace initialization.
+2. `reverse:analyze <name>` — AST analysis of code and search for tokens to replace.
+3. `reverse:build <name> [--mode short|ejected]` — final preset build.
+
+Modes:
+- **short**: Creates a compact `preset.ts` with `discoveryMode: 'auto'`. Templates are searched recursively in the source code at generation time.
+- **ejected**: Copies all source code files to the preset folder, applying replacements and turning them into static templates.
+
+Support for `globalRoot` and multiple layers in `preset.source.ts` allows building complex presets spanning multiple FSD layers at once.
+
+---
+
+### 5.8 Recursive Auto-Discovery
+
+The `discoveryMode: 'auto'` mechanism has been improved to support arbitrary nesting:
+1. Recursive scanning of all files in the slice directory.
+2. Automatic application of naming rules (prefixes/suffixes) only to main components/pages.
+3. Preservation of segment file structures (`ui`, `model`, `api`, etc.).
+
+---
+
+### 5.9 Improved Barrel Files
+
+The logic for updating `index.ts` has become more reliable:
+- **Exact substring matching**: Prevents skipping an export if its name is part of another (e.g., `Comp` will not be skipped if `Complete` exists).
+- **Self-export prevention**: `index.ts` no longer tries to export itself.
+
+---
+
+## 6. Generation Templates
+
+Each UI template creates:
 
 ```
 ui/
@@ -180,7 +216,7 @@ ui/
   Component.styles.ts
 ```
 
-Variant-паттерн:
+Variant-pattern:
 
 ```ts
 type Variant = "primary" | "secondary";
@@ -197,7 +233,7 @@ export const Root = styled.div<{ variant: Variant }>`
 
 ---
 
-## 7. Поддерживаемые шаблоны
+## 7. Supported Templates
 
 - shared: ui-basic, ui-polymorphic, ui-primitive
 - entity: model-ui-basic, model-ui-readonly
@@ -207,29 +243,29 @@ export const Root = styled.div<{ variant: Variant }>`
 
 ---
 
-## 8. Ошибки и предупреждения
+## 8. Errors and Warnings
 
 Fatal:
-- невалидный конфиг
-- неизвестные слои
+- invalid config
+- unknown layers
 
 Warnings:
-- отсутствующие шаблоны
-- пустые variants
+- missing templates
+- empty variants
 
 ---
 
-## 9. Критерии приёмки
+## 9. Acceptance Criteria
 
-Генератор:
-- работает с `defineConfig`
-- соблюдает FSD
-- использует aliases
-- обновляет barrel-файлы
-- поддерживает preview и dry-run
+The generator:
+- works with `defineConfig`
+- respects FSD
+- uses aliases
+- updates barrel files
+- supports preview and dry-run
 
 ---
 
-## 10. Итог
+## 10. Conclusion
 
-`fsd-gen` — это архитектурный инструмент, а не просто генератор.
+`fsd-gen` is an architectural tool, not just a generator.

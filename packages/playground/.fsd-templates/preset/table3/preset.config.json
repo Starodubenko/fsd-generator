@@ -1,0 +1,169 @@
+{
+    "files": [
+        {
+            "path": "index.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "model/index.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "model/model.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/index.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/useCreateUser.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/useDeleteUser.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/useGetUsers.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/User.tsx",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/useUpdateUser.ts",
+            "targetLayer": "entity",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "index.ts",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/CreateUser.styles.ts",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/CreateUser.tsx",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/DeleteUser.styles.ts",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/DeleteUser.tsx",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/EditUser.styles.ts",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/EditUser.tsx",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/index.ts",
+            "targetLayer": "feature",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "index.ts",
+            "targetLayer": "widget",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/index.ts",
+            "targetLayer": "widget",
+            "tokens": {
+                "UserWidget": "{{name}}Widget",
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/UserWidget.tsx",
+            "targetLayer": "widget",
+            "tokens": {
+                "UserWidget": "{{name}}Widget",
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "index.ts",
+            "targetLayer": "page",
+            "tokens": {
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/index.ts",
+            "targetLayer": "page",
+            "tokens": {
+                "UserPage": "{{name}}Page",
+                "User": "{{name}}"
+            }
+        },
+        {
+            "path": "ui/UserPage.tsx",
+            "targetLayer": "page",
+            "tokens": {
+                "UserPage": "{{name}}Page",
+                "User": "{{name}}"
+            }
+        }
+    ]
+}

@@ -61,30 +61,26 @@ npm run gen -- feature Login LoginForm
 npm run gen -- widget Header
 ```
 
+### Reverse Preset Generation
+
+Reverse engineer existing code into reusable presets.
+
+1.  **Initialize**: `fsd-gen reverse:init <preset-name> [--mode short|ejected]`
+2.  **Analyze**: `fsd-gen reverse:analyze <preset-name>`
+3.  **Build**: `fsd-gen reverse:build <preset-name> [--mode short|ejected]`
+
+#### Modes
+-   **short**: Minimal preset code, uses recursive auto-discovery at generation time.
+-   **ejected**: Copies source files into the preset as static templates.
+
+#### Improved Auto-Discovery
+-   **Recursive Scanning**: Automatically discovers all files in a slice while maintaining structure.
+-   **Smart Naming**: Applies FSD naming conventions (prefixes/suffixes) to relevant components and pages.
+-   **Barrel Updates**: Intelligent `index.ts` updates with substring matching and recursion prevention.
+
+---
+
 ### Using Presets
-
-Presets allow you to generate multiple related components across different layers to form a complete feature set.
-
-#### Table Preset (`preset table`)
-Generates a complete CRUD table implementation, including:
-*   **Entity**: Data types (`model/types.ts`), UI component, and API hooks (`useGet...`, `useCreate...`, `useUpdate...`, `useDelete...`).
-*   **Feature**: `Create`, `Edit`, and `Delete` buttons connected to the API hooks.
-*   **Widget**: A Table component that displays data and integrates the Feature buttons.
-*   **Page**: A dedicated page component wrapping the widget.
-*   **Route**: Automatically injects a new route (e.g., `/users`) into `App.tsx`.
-
-**Usage:**
-
-```bash
-npm run gen -- preset table <SliceName>
-```
-
-**Example:**
-
-```bash
-npm run gen -- preset table Product
-```
-*This command will generate `Product` entity, `ManageProduct` features, `ProductTable` widget, and `ProductPage` page.*
 
 ## ⚙️ Configuration
 

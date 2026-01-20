@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { discoverTemplates, createFileAction } from '../../../src/lib/preset/presetDiscovery.js';
-import { ACTION_TYPES, FSD_LAYERS, FSD_SEGMENTS, PRESET_DIRS } from '../../../src/lib/constants.js';
+import { discoverTemplates } from '../../../src/lib/preset/presetDiscovery.js';
+import { ACTION_TYPES, FSD_LAYERS } from '../../../src/lib/constants.js';
 import * as fs from 'node:fs/promises';
+import * as fsSync from 'node:fs';
 
 vi.mock('fs/promises');
+vi.mock('node:fs', () => ({
+    existsSync: vi.fn()
+}));
 
 describe('presetDiscovery', () => {
     beforeEach(() => {
@@ -11,302 +15,88 @@ describe('presetDiscovery', () => {
     });
 
     describe('discoverTemplates', () => {
-        it('should identify API directories as HOOK actions', async () => {
+        it('should recursively discover files in layers', async () => {
             const presetDir = 'presets/table';
             const presetName = 'table';
             const entityName = 'User';
 
-            // Mock scanLayerDirectory for 'entity' layer
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+            vi.mocked(fsSync.existsSync).mockImplementation((path: any) => String(path).includes('entity'));
             vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('entity')) {
+                const s = String(path);
+                if (s.endsWith('entity')) {
                     return [{ name: 'api', isDirectory: () => true, isFile: () => false }] as any;
                 }
-                if (String(path).endsWith('api')) {
-                    // Return both 'get' and 'create' to cover both branches
-                    return [
-                        { name: 'get', isDirectory: () => true, isFile: () => false },
-                        { name: 'create', isDirectory: () => true, isFile: () => false }
-                    ] as any;
+                if (s.endsWith('api')) {
+                    return [{ name: 'get', isDirectory: () => true, isFile: () => false }] as any;
+                }
+                if (s.endsWith('get')) {
+                    return [{ name: 'useGetUsers.ts', isDirectory: () => false, isFile: () => true }] as any;
                 }
                 return [];
             });
 
             const actions = await discoverTemplates(presetDir, presetName, entityName);
 
-            const getAction = actions.find(a => (a as any).name === 'useGetUsers') as any;
-            const createAction = actions.find(a => (a as any).name === 'useCreateUser') as any;
-
-            expect(getAction).toBeDefined();
-            expect(createAction).toBeDefined();
-            expect(createAction.name).toBe('useCreateUser'); // Checks that 's' is not added
-        });
-
-        it('should identify feature buttons as COMPONENT actions', async () => {
-            const presetDir = 'presets/table';
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('feature')) {
-                    return [{ name: PRESET_DIRS.BUTTONS, isDirectory: () => true, isFile: () => false }] as any;
-                }
-                if (String(path).endsWith(PRESET_DIRS.BUTTONS)) {
-                    return [{ name: 'create', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
-
-            const actions = await discoverTemplates(presetDir, 'table', 'User');
-            const featureAction = actions.find(a => (a as any).layer === FSD_LAYERS.FEATURE) as any;
-            expect(featureAction).toBeDefined();
-            expect(featureAction.name).toBe('CreateUser');
-        });
-
-        it('should identify page templates as COMPONENT actions', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('page')) {
-                    return [{ name: 'page', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect((actions[0] as any).layer).toBe(FSD_LAYERS.PAGE);
-        });
-
-        it('should identify shared components', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('shared')) {
-                    return [{ name: 'Button', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect((actions[0] as any).layer).toBe(FSD_LAYERS.SHARED);
-            expect((actions[0] as any).slice).toBe('Button');
-        });
-
-        it('should identify .ts files as FILE actions', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('entity')) {
-                    return [{ name: 'types.ts', isDirectory: () => false, isFile: () => true }] as any;
-                }
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
+            expect(actions.length).toBe(1);
             expect(actions[0].type).toBe(ACTION_TYPES.FILE);
+            expect((actions[0] as any).path).toBe('entities/User/api/get/useGetUsers.ts');
         });
 
-        it('should handle custom conventions', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+        it('should apply correct slice name conventions for component-like files', async () => {
+            vi.mocked(fsSync.existsSync).mockImplementation((path: any) => {
+                const s = String(path);
+                return s.includes('widget') || s.includes('feature') || s.includes('page');
+            });
+
             vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('widget')) {
-                    return [{ name: PRESET_DIRS.TABLE, isDirectory: () => true, isFile: () => false }] as any;
-                }
+                const s = String(path);
+                if (s.endsWith('widget')) return [{ name: '{{name}}Widget.tsx', isDirectory: () => false, isFile: () => true }] as any;
+                if (s.endsWith('feature')) return [{ name: 'Component.tsx', isDirectory: () => false, isFile: () => true }] as any;
+                if (s.endsWith('page')) return [{ name: '{{name}}Page.tsx', isDirectory: () => false, isFile: () => true }] as any;
                 return [];
             });
 
-            const conventions = { widgetSliceSuffix: 'Grid', featureSlicePrefix: 'MyPrefix', pageSliceSuffix: 'View' };
-
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('widget')) return [{ name: PRESET_DIRS.TABLE, isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('feature')) return [{ name: PRESET_DIRS.BUTTONS, isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith(PRESET_DIRS.BUTTONS)) return [{ name: 'create', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('page')) return [{ name: 'page', isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
+            const conventions = {
+                widgetSliceSuffix: 'Table',
+                featureSlicePrefix: 'Manage',
+                pageSliceSuffix: 'View'
+            };
 
             const actions = await discoverTemplates('p', 'table', 'User', conventions);
 
-            const widgetAction = actions.find(a => (a as any).layer === FSD_LAYERS.WIDGET) as any;
-            const featureAction = actions.find(a => (a as any).layer === FSD_LAYERS.FEATURE) as any;
-            const pageAction = actions.find(a => (a as any).layer === FSD_LAYERS.PAGE) as any;
+            const widgetAction = actions.find(a => (a as any).path.startsWith('widgets/UserTable'));
+            const featureAction = actions.find(a => (a as any).path.startsWith('features/ManageUser'));
+            const pageAction = actions.find(a => (a as any).path.startsWith('pages/UserView'));
 
-            expect(widgetAction.slice).toBe('UserGrid');
-            expect(featureAction.slice).toBe('MyPrefixUser');
-            expect(pageAction.slice).toBe('UserView');
+            expect(widgetAction).toBeDefined();
+            expect(featureAction).toBeDefined();
+            expect(pageAction).toBeDefined();
         });
 
-        it('should handle unknown API hooks with generic naming', async () => {
-            const presetDir = 'presets/test';
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('entity')) return [{ name: 'api', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('api')) return [{ name: 'customOp', isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
-
-            const actions = await discoverTemplates(presetDir, 'test', 'User');
-            const action = actions.find(a => (a as any).name === 'useCustomOpUser');
-            expect(action).toBeDefined();
-        });
-
-        it('should discover widget actions from any directory name', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('widget')) return [{ name: 'custom-widget', isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            const action = actions.find(a => (a as any).layer === 'widget');
-            expect((action as any).template).toContain('custom-widget');
-            expect((action as any).slice).toBe('UserTable'); // Default suffix 'Table' if not overridden, but template path uses dir name
-        });
-
-        it('should discover page actions from any directory name', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('page')) return [{ name: 'ui', isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            const action = actions.find(a => (a as any).layer === 'page');
-            expect((action as any).template).toContain('ui');
-            expect((action as any).slice).toBe('UserPage');
-        });
-
-        it('should use default conventions for widget table', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('widget')) return [{ name: PRESET_DIRS.TABLE, isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            const action = actions.find(a => (a as any).layer === 'widget');
-            expect((action as any).slice).toBe('UserTable');
-        });
-
-        it('should ignore non-directory entries in API and Button folders', async () => {
-            const presetDir = 'presets/test';
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('entity')) return [{ name: 'api', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('api')) return [{ name: 'readme.md', isDirectory: () => false, isFile: () => true }] as any;
-
-                if (String(path).endsWith('feature')) return [{ name: 'buttons', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('buttons')) return [{ name: 'readme.md', isDirectory: () => false, isFile: () => true }] as any;
-
-                return [];
-            });
-
-            const actions = await discoverTemplates(presetDir, 'test', 'User');
-            const apiActions = actions.filter(a => (a as any).layer === 'entity' && (a as any).type === 'hook');
-            const buttonActions = actions.filter(a => (a as any).layer === 'feature' && (a as any).name?.includes('Button'));
-
-            expect(apiActions.length).toBe(0);
-            expect(buttonActions.length).toBe(0);
-        });
-
-        it('should handle empty directories in feature layer (no sub-components)', async () => {
-            const presetDir = 'presets/test';
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('feature')) return [{ name: 'random-dir', isDirectory: () => true, isFile: () => false }] as any;
-                // random-dir returns empty list by default fallback
-                return [];
-            });
-
-            const actions = await discoverTemplates(presetDir, 'test', 'User');
-            // Should be empty because random-dir contains no sub-directories
-            expect(actions.length).toBe(0);
-        });
-
-        it('should correctly construct generic widget/page template paths', async () => {
-            const presetDir = 'presets/test';
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path) => {
-                if (String(path).endsWith('widget')) return [{ name: 'my-widget', isDirectory: () => true, isFile: () => false }] as any;
-                if (String(path).endsWith('page')) return [{ name: 'my-page', isDirectory: () => true, isFile: () => false }] as any;
-                return [];
-            });
-
-            const actions = await discoverTemplates(presetDir, 'test', 'User');
-            const widgetAction = actions.find(a => (a as any).layer === 'widget') as any;
-            const pageAction = actions.find(a => (a as any).layer === 'page') as any;
-
-            expect(widgetAction.template).toMatch(/preset\/test\/widget\/my-widget$/);
-            expect(pageAction.template).toMatch(/preset\/test\/page\/my-page$/);
-        });
-    });
-
-    describe('createFileAction', () => {
-
-        it('should default to "pages" plural for unknown layer', () => {
-            const entry = { name: 'test.ts' } as any;
-            const action = createFileAction(entry, 'unknown_layer', 'User', 'preset');
-            expect(action.path).toContain('pages/User/model/test.ts');
-        });
-
-        it('should identify UI segment in entity layer', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('entity')) {
-                    return [{ name: FSD_SEGMENTS.UI, isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
-
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect(actions.some(a => (a as any).type === ACTION_TYPES.COMPONENT && (a as any).layer === FSD_LAYERS.ENTITY)).toBe(true);
-        });
-
-        it('should handle missing layer directory', async () => {
-            vi.mocked(fs.stat).mockRejectedValue(new Error('no dir'));
+        it('should handle missing layer directories gracefully', async () => {
+            vi.mocked(fsSync.existsSync).mockReturnValue(false);
             const actions = await discoverTemplates('p', 'table', 'User');
             expect(actions).toEqual([]);
         });
 
-        it('should handle random directory in entity layer', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('entity')) {
-                    return [{ name: 'random', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
+        it('should ignore empty directories', async () => {
+            vi.mocked(fsSync.existsSync).mockReturnValue(true);
+            vi.mocked(fs.readdir).mockResolvedValue([]);
             const actions = await discoverTemplates('p', 'table', 'User');
-            expect(actions.length).toBe(0);
+            expect(actions).toEqual([]);
         });
 
-        it('should handle random hook names', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-            vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
-                if (String(path).endsWith('entity')) {
-                    return [{ name: 'api', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                if (String(path).endsWith('api')) {
-                    return [{ name: 'custom', isDirectory: () => true, isFile: () => false }] as any;
-                }
-                return [];
-            });
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect((actions[0] as any).name).toBe('useCustomUser');
-        });
-
-        it('should handle shared directory with same name as layer', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
+        it('should correctly construct template paths', async () => {
+            vi.mocked(fsSync.existsSync).mockImplementation((path: any) => String(path).includes('shared'));
             vi.mocked(fs.readdir).mockImplementation(async (path: any) => {
                 if (String(path).endsWith('shared')) {
-                    return [{ name: 'shared', isDirectory: () => true, isFile: () => false }] as any;
+                    return [{ name: 'Button.tsx', isDirectory: () => false, isFile: () => true }] as any;
                 }
                 return [];
             });
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect((actions[0] as any).slice).toBe('User');
-        });
 
-        it('should handle non-directory entries gracefully', async () => {
-            vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => false } as any);
-            const actions = await discoverTemplates('p', 'table', 'User');
-            expect(actions).toEqual([]);
+            const actions = await discoverTemplates('presets/my-preset', 'my-preset', 'User');
+            expect(actions[0].template).toBe('preset/my-preset/shared/Button.tsx');
         });
     });
 });

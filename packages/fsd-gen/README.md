@@ -29,13 +29,25 @@ npx @starodubenko/fsd-gen generate <layer> <slice> [name]
 npx @starodubenko/fsd-gen generate entity User UserCard
 ```
 
-### Using Presets
+### Generating from Presets
 
 Presets generate multiple related components across layers.
 
 ```bash
 npx @starodubenko/fsd-gen preset table Product
 ```
+
+### Reverse Preset Generation (Beta)
+
+Reverse engineer existing code into reusable presets.
+
+1.  **Initialize**: `fsd-gen reverse:init <preset-name> [--mode short|ejected]`
+2.  **Analyze**: `fsd-gen reverse:analyze <preset-name>`
+3.  **Build**: `fsd-gen reverse:build <preset-name> [--mode short|ejected]`
+
+#### Modes
+-   **short** (default): Generates a thin `preset.ts` that auto-discovers templates at runtime.
+-   **ejected**: Compiles and copies all source files into the preset folder as static templates.
 
 ## ⚙️ Configuration
 

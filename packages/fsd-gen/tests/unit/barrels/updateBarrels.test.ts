@@ -49,4 +49,24 @@ describe('updateBarrel', () => {
 
         expect(fs.writeFileSync).not.toHaveBeenCalled();
     });
+
+    it('should NOT skip if export is a substring of an existing export', () => {
+        vi.mocked(fs.existsSync).mockReturnValue(true);
+        vi.mocked(fs.readFileSync).mockReturnValue("export * from './Complete';");
+
+        updateBarrel('/dir', 'Comp', 'Comp');
+
+        expect(fs.writeFileSync).toHaveBeenCalled();
+        const call = vi.mocked(fs.writeFileSync).mock.calls[0];
+        expect(call[1]).toContain("export * from './Comp';");
+    });
+
+    it('should NOT add export if it is the index file itself (recursive export)', () => {
+        vi.mocked(fs.existsSync).mockReturnValue(true);
+        vi.mocked(fs.readFileSync).mockReturnValue("");
+
+        updateBarrel('/dir', 'index', 'index');
+
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
+    });
 });

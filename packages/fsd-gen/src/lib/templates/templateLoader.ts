@@ -56,26 +56,78 @@ export async function findTemplateDir(
 export async function readComponentTemplate(templateDir: string): Promise<string | ((context: TemplateContext) => string)> {
     // Try to find dynamic template files
     const extensions = ['.tsx', '.ts', '.js'];
-    const baseName = TEMPLATE_FILES.COMPONENT.replace('.tsx', ''); // Removing extension if present in constant to try different ones
 
-    // Check for Component.tsx, Component.ts, Component.js that are modules
-    for (const ext of extensions) {
-        try {
-            const modulePath = resolve(templateDir, `Component${ext}`);
-            await stat(modulePath);
-            // Found a module file, load it with jiti
-            const module = await jiti.import(modulePath) as { default: (context: any) => string };
-            if (typeof module.default === 'function') {
-                return module.default;
+    // Check for Component.tsx or tokenized names like {{name}}.tsx
+    const possibleNames = ['Component', '{{name}}', '{{entityName}}'];
+
+    // Check for Component.tsx, {{name}}.tsx, etc. that are modules
+    for (const name of possibleNames) {
+        for (const ext of extensions) {
+            try {
+                const modulePath = resolve(templateDir, `${name}${ext}`);
+                await stat(modulePath);
+                // Found a module file, load it with jiti
+                const module = await jiti.import(modulePath) as { default: (context: any) => string };
+                if (typeof module.default === 'function') {
+                    return module.default;
+                }
+            } catch {
+                // Continue
             }
+        }
+    }
+
+    // List all files in the template directory to find component candidates
+    // This handles variants like {{name}}.tsx, {{name}}Widget.tsx, etc.
+    let allFiles: any[] = [];
+    try {
+        allFiles = await readdir(templateDir) || [];
+    } catch (e) {
+        // Directory might not exist or readdir might fail
+    }
+
+    const componentCandidates = allFiles
+        .map(f => typeof f === 'string' ? f : (f as any).name)
+        .filter(f =>
+            f && (
+                f.includes('{{name}}') ||
+                f.includes('{{entityName}}') ||
+                (f.startsWith('Component') && (f.endsWith('.tsx') || f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.jsx')))
+            )
+        );
+
+    for (const fileName of componentCandidates) {
+        // Skip styles
+        if (fileName.includes('.styles.ts')) continue;
+        // Skip index
+        if (fileName === 'index.ts' || fileName === 'index.tsx') continue;
+
+        const baseName = fileName.replace(/\.tsx?$/, '');
+
+        // Try module first
+        for (const ext of extensions) {
+            try {
+                const modulePath = resolve(templateDir, `${baseName}${ext}`);
+                await stat(modulePath);
+                const module = await jiti.import(modulePath) as { default: (context: any) => string };
+                if (typeof module.default === 'function') {
+                    return module.default;
+                }
+            } catch {
+                // Continue
+            }
+        }
+
+        // Try text
+        try {
+            const componentPath = join(templateDir, fileName);
+            return await readFile(componentPath, 'utf-8');
         } catch {
             // Continue
         }
     }
 
-    // Fallback to reading as text (original behavior)
-    const componentPath = join(templateDir, TEMPLATE_FILES.COMPONENT);
-    return await readFile(componentPath, 'utf-8');
+    throw new Error(`No component template found in ${templateDir}. Expected Component.tsx, {{name}}.tsx or similar in ${templateDir}`);
 }
 
 /**

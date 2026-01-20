@@ -45,6 +45,9 @@ describe('templateLoader', () => {
     describe('loadTemplate', () => {
         it('should load component and styles', async () => {
             vi.mocked(fs.stat).mockResolvedValue({} as any);
+            // Readdir called inside readComponentTemplate
+            vi.mocked(fs.readdir).mockResolvedValue(['Component.tsx'] as any);
+
             vi.mocked(fs.readFile).mockResolvedValueOnce('comp content').mockResolvedValueOnce('styles content');
 
             const result = await loadTemplate('layer', 'type', '/custom');
@@ -53,6 +56,9 @@ describe('templateLoader', () => {
 
         it('should return empty styles if file missing', async () => {
             vi.mocked(fs.stat).mockResolvedValue({} as any);
+            // Readdir called inside readComponentTemplate
+            vi.mocked(fs.readdir).mockResolvedValue(['Component.tsx'] as any);
+
             vi.mocked(fs.readFile)
                 .mockResolvedValueOnce('comp content')
                 .mockRejectedValueOnce(new Error('no styles'));

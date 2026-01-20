@@ -19,11 +19,14 @@ export function updateBarrel(directory: string, exportName: string, exportPath: 
 
     // Check if export already exists
     const exportStatement = `export * from './${exportPath}';`;
-    // Or named export: export { Name } from './Path';
-    // Spec says: "Автообновление barrel-файлов ... создаёт index.ts, добавляет export, не дублирует"
 
-    // A simple heuristic: check if the string exists.
-    if (content.includes(exportPath)) {
+    // Prevent index from exporting itself
+    if (exportPath === 'index') {
+        return;
+    }
+
+    // A more precise check for the exact export statement
+    if (content.includes(exportStatement)) {
         return;
     }
 

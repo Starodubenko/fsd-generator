@@ -320,6 +320,7 @@ ${ROUTING.MARKER}`;
             const { readComponentTemplate } = await import('../../../src/lib/templates/templateLoader.js');
             vi.mocked(fs.stat).mockRejectedValue(new Error('ENOENT'));
             vi.mocked(fs.readFile).mockResolvedValue('static content');
+            vi.mocked(fs.readdir).mockResolvedValue(['Component.tsx'] as any);
 
             const res = await readComponentTemplate('/path/to/template');
             expect(res).toBe('static content');
@@ -339,6 +340,7 @@ ${ROUTING.MARKER}`;
             mockJitiImport.mockResolvedValue({ default: 'not a function' });
             vi.mocked(fs.stat).mockResolvedValue({} as any);
             vi.mocked(fs.readFile).mockResolvedValue('static fallback');
+            vi.mocked(fs.readdir).mockResolvedValue(['Component.tsx'] as any);
 
             const res = await readComponentTemplate('/path/to/template');
             expect(res).toBe('static fallback');

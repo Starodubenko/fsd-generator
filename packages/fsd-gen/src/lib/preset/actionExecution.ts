@@ -203,10 +203,11 @@ export async function executeFileAction(
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);
 
-        // Update barrel for the file (only for TypeScript files)
-        if (targetPath.endsWith(FILE_EXTENSIONS.TYPESCRIPT) || targetPath.endsWith(FILE_EXTENSIONS.TSX)) {
+        // Update barrel for the file (only for TypeScript files, except index)
+        if ((targetPath.endsWith(FILE_EXTENSIONS.TYPESCRIPT) || targetPath.endsWith(FILE_EXTENSIONS.TSX)) && !targetPath.endsWith('index.ts')) {
             const dir = dirname(targetPath);
-            const fileName = basename(targetPath, FILE_EXTENSIONS.TYPESCRIPT); // Remove .ts for export
+            const ext = targetPath.endsWith(FILE_EXTENSIONS.TSX) ? FILE_EXTENSIONS.TSX : FILE_EXTENSIONS.TYPESCRIPT;
+            const fileName = basename(targetPath, ext); // Remove extension for export
             updateBarrel(dir, fileName, fileName);
         }
     }
