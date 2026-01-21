@@ -121,7 +121,7 @@ describe('Reverse Preset Generation', () => {
             const sourceConfig: PresetSourceConfig = { root: etalonDir };
             await writeFile(join(presetDir, 'preset.source.ts'), `export default ${JSON.stringify(sourceConfig)};`);
 
-            await expect(buildReversePreset(presetName, templatesDir)).rejects.toThrow('Missing preset source or config files');
+            await expect(buildReversePreset(presetName, templatesDir)).rejects.toThrow('Missing preset config file');
         });
 
         it('should skip missing source files with warning', async () => {
