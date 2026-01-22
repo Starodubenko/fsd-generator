@@ -632,7 +632,7 @@
     zod "^3.24.1"
 
 "@starodubenko/fsd-gen@file:/Users/rodionstarodubenko/Projects/fsd-generator/packages/fsd-gen":
-  version "1.4.0-0"
+  version "1.4.1-0"
   resolved "file:packages/fsd-gen"
   dependencies:
     chalk "^5.4.1"

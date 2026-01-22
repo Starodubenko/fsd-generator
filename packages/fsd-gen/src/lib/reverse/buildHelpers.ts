@@ -60,18 +60,27 @@ export async function loadReverseEnvironment(presetDir: string): Promise<{
  */
 export function normalizeLayers(sourceConfig: PresetSourceConfig): NormalizedPresetSourceItem[] {
     const result: NormalizedPresetSourceItem[] = [];
-    
-    if (sourceConfig.layers) {
+
+    // Helper to ensure we have a string root
+    const toS = (v: any) => String(v);
+
+    if (sourceConfig.layers && Array.isArray(sourceConfig.layers)) {
         for (const layer of sourceConfig.layers) {
-            const roots = Array.isArray(layer.root) ? layer.root : [layer.root];
+            if (!layer || !layer.root) continue;
+
+            // Flatten deeply nested arrays explicitly
+            const roots = (Array.isArray(layer.root) ? layer.root : [layer.root]).flat(Infinity);
+
             if (roots.length === 1) {
-                result.push({ root: roots[0], targetLayer: layer.targetLayer });
-            } else {
-                const basenames = roots.map(r => basename(r));
+                result.push({ root: toS(roots[0]), targetLayer: layer.targetLayer });
+            } else if (roots.length > 1) {
+                const basenames = roots.map(r => basename(toS(r)));
                 const nameCount = new Map();
                 const nameIndices = new Map();
                 basenames.forEach(name => { nameCount.set(name, (nameCount.get(name) || 0) + 1); });
-                roots.forEach((root, index) => {
+
+                roots.forEach((rawRoot, index) => {
+                    const root = toS(rawRoot);
                     const name = basenames[index];
                     const count = nameCount.get(name) || 1;
                     if (count > 1) {
@@ -86,16 +95,20 @@ export function normalizeLayers(sourceConfig: PresetSourceConfig): NormalizedPre
             }
         }
     } else if (sourceConfig.root) {
-        const roots = Array.isArray(sourceConfig.root) ? sourceConfig.root : [sourceConfig.root];
+        // Flatten deeply nested arrays explicitly
+        const roots = (Array.isArray(sourceConfig.root) ? sourceConfig.root : [sourceConfig.root]).flat(Infinity);
         const targetLayer = sourceConfig.targetLayer || 'entity';
+
         if (roots.length === 1) {
-            result.push({ root: roots[0], targetLayer });
-        } else {
-            const basenames = roots.map(r => basename(r));
+            result.push({ root: toS(roots[0]), targetLayer });
+        } else if (roots.length > 1) {
+            const basenames = roots.map(r => basename(toS(r)));
             const nameCount = new Map();
             const nameIndices = new Map();
             basenames.forEach(name => { nameCount.set(name, (nameCount.get(name) || 0) + 1); });
-            roots.forEach((root, index) => {
+
+            roots.forEach((rawRoot, index) => {
+                const root = toS(rawRoot);
                 const name = basenames[index];
                 const count = nameCount.get(name) || 1;
                 if (count > 1) {

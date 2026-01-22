@@ -177,10 +177,13 @@ export function identifyTokens(content: string, variations: ReturnType<typeof ge
 /**
  * Resolves the absolute source root path
  */
-export function resolveSourceRoot(presetDir: string, globalRoot?: string, layerRoot: string = ''): string {
+export function resolveSourceRoot(presetDir: string, globalRoot?: string | string[], layerRoot: string = ''): string {
     let basePath = presetDir;
     if (globalRoot) {
-        basePath = resolve(presetDir, globalRoot);
+        // Handle array if user accidentally passed one
+        const root = Array.isArray(globalRoot) ? String(globalRoot[0]) : String(globalRoot);
+        basePath = resolve(presetDir, root);
     }
-    return resolve(basePath, layerRoot);
+    // layerRoot should already be normalized to string by normalizeLayers, but we cast just in case
+    return resolve(basePath, String(layerRoot));
 }
