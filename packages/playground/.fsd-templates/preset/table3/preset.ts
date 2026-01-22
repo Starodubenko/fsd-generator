@@ -24,28 +24,28 @@ export default definePreset({
     },
     {
         "type": "file",
-        "path": "entities/{{name}}/ui/useCreate{{name}}.ts",
-        "template": "preset/table3/entity/ui/useCreate{{name}}.ts"
+        "path": "entities/{{name}}/ui/useCreate{{entityName}}.ts",
+        "template": "preset/table3/entity/ui/useCreate{{entityName}}.ts"
     },
     {
         "type": "file",
-        "path": "entities/{{name}}/ui/useDelete{{name}}.ts",
-        "template": "preset/table3/entity/ui/useDelete{{name}}.ts"
+        "path": "entities/{{name}}/ui/useDelete{{entityName}}.ts",
+        "template": "preset/table3/entity/ui/useDelete{{entityName}}.ts"
     },
     {
         "type": "file",
-        "path": "entities/{{name}}/ui/useGet{{name}}s.ts",
-        "template": "preset/table3/entity/ui/useGet{{name}}s.ts"
+        "path": "entities/{{name}}/ui/useGet{{entityName}}.ts",
+        "template": "preset/table3/entity/ui/useGet{{entityName}}.ts"
     },
     {
         "type": "file",
-        "path": "entities/{{name}}/ui/{{name}}.tsx",
-        "template": "preset/table3/entity/ui/{{name}}.tsx"
+        "path": "entities/{{name}}/ui/{{entityName}}.tsx",
+        "template": "preset/table3/entity/ui/{{entityName}}.tsx"
     },
     {
         "type": "file",
-        "path": "entities/{{name}}/ui/useUpdate{{name}}.ts",
-        "template": "preset/table3/entity/ui/useUpdate{{name}}.ts"
+        "path": "entities/{{name}}/ui/useUpdate{{entityName}}.ts",
+        "template": "preset/table3/entity/ui/useUpdate{{entityName}}.ts"
     },
     {
         "type": "file",
@@ -54,33 +54,33 @@ export default definePreset({
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Create{{name}}.styles.ts",
-        "template": "preset/table3/feature/ui/Create{{name}}.styles.ts"
+        "path": "features/Manage{{name}}/ui/CreateUser.styles.ts",
+        "template": "preset/table3/feature/ui/CreateUser.styles.ts"
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Create{{name}}.tsx",
-        "template": "preset/table3/feature/ui/Create{{name}}.tsx"
+        "path": "features/Manage{{name}}/ui/CreateUser.tsx",
+        "template": "preset/table3/feature/ui/CreateUser.tsx"
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Delete{{name}}.styles.ts",
-        "template": "preset/table3/feature/ui/Delete{{name}}.styles.ts"
+        "path": "features/Manage{{name}}/ui/DeleteUser.styles.ts",
+        "template": "preset/table3/feature/ui/DeleteUser.styles.ts"
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Delete{{name}}.tsx",
-        "template": "preset/table3/feature/ui/Delete{{name}}.tsx"
+        "path": "features/Manage{{name}}/ui/DeleteUser.tsx",
+        "template": "preset/table3/feature/ui/DeleteUser.tsx"
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Edit{{name}}.styles.ts",
-        "template": "preset/table3/feature/ui/Edit{{name}}.styles.ts"
+        "path": "features/Manage{{name}}/ui/EditUser.styles.ts",
+        "template": "preset/table3/feature/ui/EditUser.styles.ts"
     },
     {
         "type": "file",
-        "path": "features/Manage{{name}}/ui/Edit{{name}}.tsx",
-        "template": "preset/table3/feature/ui/Edit{{name}}.tsx"
+        "path": "features/Manage{{name}}/ui/EditUser.tsx",
+        "template": "preset/table3/feature/ui/EditUser.tsx"
     },
     {
         "type": "file",
@@ -99,8 +99,8 @@ export default definePreset({
     },
     {
         "type": "file",
-        "path": "widgets/{{name}}Widget/ui/{{name}}Widget.tsx",
-        "template": "preset/table3/widget/ui/{{name}}Widget.tsx"
+        "path": "widgets/{{name}}Widget/ui/{{entityName}}.tsx",
+        "template": "preset/table3/widget/ui/{{entityName}}.tsx"
     },
     {
         "type": "file",
@@ -114,8 +114,8 @@ export default definePreset({
     },
     {
         "type": "file",
-        "path": "pages/{{name}}Page/ui/{{name}}Page.tsx",
-        "template": "preset/table3/page/ui/{{name}}Page.tsx"
+        "path": "pages/{{name}}Page/ui/{{entityName}}.tsx",
+        "template": "preset/table3/page/ui/{{entityName}}.tsx"
     }
 ]
 });

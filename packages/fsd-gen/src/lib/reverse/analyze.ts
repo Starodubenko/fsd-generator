@@ -67,6 +67,7 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
             resultFiles.push({
                 path: relPath,
                 targetLayer: layer.targetLayer,
+                sourceRoot: layer.root,
                 tokens
             });
         }
@@ -113,6 +114,7 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
         return `    {
         "path": "${file.path}",
         "targetLayer": ${layerToEnum(file.targetLayer)},
+        "sourceRoot": "${file.sourceRoot || ''}",
         "tokens": {
             ${tokensStr}
         }

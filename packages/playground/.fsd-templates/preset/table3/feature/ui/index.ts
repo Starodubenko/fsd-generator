@@ -1,3 +1,3 @@
-export * from './Create{{name}}';
-export * from './Delete{{name}}';
-export * from './Edit{{name}}';
+export * from './CreateUser';
+export * from './DeleteUser';
+export * from './EditUser';

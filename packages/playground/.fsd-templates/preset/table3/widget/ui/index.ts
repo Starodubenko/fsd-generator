@@ -1,1 +1,1 @@
-export * from './{{name}}Widget';
+export * from './{{entityName}}';

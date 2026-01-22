@@ -77,6 +77,7 @@ export interface PresetConfigTokenMap {
 export interface PresetConfigFile {
     path: string;
     targetLayer: FsdLayerValue | string; // Store which layer this file belongs to, allow string for backward compatibility
+    sourceRoot?: string; // Original root path from source config
     tokens: PresetConfigTokenMap;
     // We might add imports later if needed for complex resolving
 }

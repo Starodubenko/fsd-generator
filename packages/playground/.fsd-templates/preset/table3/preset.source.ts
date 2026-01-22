@@ -7,7 +7,7 @@ const config: PresetSourceConfig = {
 
     layers: [
         {
-            root: 'entities/User',
+            root: ['entities/User'],
             targetLayer: 'entity'
         },
         {

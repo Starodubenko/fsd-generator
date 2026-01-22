@@ -26,12 +26,55 @@ export async function buildReversePreset(presetName: string, templatesDir: strin
 
     console.log(`Building preset "${presetName}"...`);
 
-    // Step 2: Process individual files and generate templates
+    // Group files by their destination template path to merge tokens
+    // Key: targetLayer + '|' + destRelativePath
+    const groupedFiles = new Map<string, {
+        targetLayer: string;
+        destRelativePath: string;
+        files: typeof presetConfig.files;
+    }>();
+
     for (const file of presetConfig.files) {
-        const layerConfig = layers.find(l => l.targetLayer === file.targetLayer);
+        const destRelativePath = applyTokens(file.path, file.tokens);
+        const key = `${file.targetLayer}|${destRelativePath}`;
+
+        if (!groupedFiles.has(key)) {
+            groupedFiles.set(key, {
+                targetLayer: String(file.targetLayer),
+                destRelativePath,
+                files: []
+            });
+        }
+        groupedFiles.get(key)!.files.push(file);
+    }
+
+    // Step 2: Process individual files and generate templates
+    for (const group of groupedFiles.values()) {
+        const { targetLayer, destRelativePath, files } = group;
+
+        // Merge all tokens for this destination file
+        const mergedTokens = {};
+        for (const file of files) {
+            Object.assign(mergedTokens, file.tokens);
+        }
+
+        // Use the first file in group to resolve source root
+        const primaryFile = files[0];
+
+        // Find the specific layer config match
+        // 1. Try exact match with targetLayer AND sourceRoot
+        // 2. Fall back to just targetLayer
+        let layerConfig = layers.find(l =>
+            l.targetLayer === targetLayer &&
+            primaryFile.sourceRoot && l.root === primaryFile.sourceRoot
+        );
 
         if (!layerConfig) {
-            console.warn(`No source config found for layer "${file.targetLayer}" (skipping ${file.path})`);
+            layerConfig = layers.find(l => l.targetLayer === targetLayer);
+        }
+
+        if (!layerConfig) {
+            console.warn(`No source config found for layer "${targetLayer}" (skipping ${primaryFile.path})`);
             continue;
         }
 
@@ -41,24 +84,23 @@ export async function buildReversePreset(presetName: string, templatesDir: strin
             basePath = resolve(presetDir, sourceConfig.globalRoot);
         }
         const rootPath = resolve(basePath, layerConfig.root);
-        const originalFilePath = join(rootPath, file.path);
+        const originalFilePath = join(rootPath, primaryFile.path);
 
         if (!existsSync(originalFilePath)) {
             console.warn(`Source file not found (skipping): ${originalFilePath}`);
             continue;
         }
 
-        // Apply transformations
+        // Apply transformations using MERGED tokens
         const rawContent = await readFile(originalFilePath, 'utf-8');
-        const content = applyTokens(rawContent, file.tokens);
-        const destRelativePath = applyTokens(file.path, file.tokens);
+        const content = applyTokens(rawContent, mergedTokens);
 
         // Save generated template
-        const destPath = join(presetDir, file.targetLayer, destRelativePath);
+        const destPath = join(presetDir, targetLayer, destRelativePath);
         await mkdir(dirname(destPath), { recursive: true });
         await writeFile(destPath, content, 'utf-8');
 
-        console.log(`Generated: ${file.targetLayer}/${destRelativePath}`);
+        console.log(`Generated: ${targetLayer}/${destRelativePath} (merged ${files.length} entries)`);
     }
 
     // Step 3: Generate the final preset.ts configuration

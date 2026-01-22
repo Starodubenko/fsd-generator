@@ -237,5 +237,85 @@ describe('Reverse Preset Generation', () => {
             const expectedPath = join(presetDir, 'entity', 'ui', '{{entityName}}Card.tsx');
             expect(existsSync(expectedPath)).toBe(true);
         });
+
+        it('should support multiple roots in the same layer during build', async () => {
+            const presetName = 'build-multi-root';
+            const presetDir = join(templatesDir, 'preset', presetName);
+            await initReversePreset(presetName, templatesDir);
+
+            // Create another etalon directory
+            const etalonDir2 = join(testDir, 'etalon2', 'entity', 'Admin');
+            await mkdir(join(etalonDir2, 'ui'), { recursive: true });
+            await writeFile(join(etalonDir2, 'ui', 'AdminCard.tsx'), 'export const AdminCard = () => null;');
+
+            const sourceConfig: PresetSourceConfig = {
+                layers: [
+                    { root: 'etalon/entity/User', targetLayer: 'entity' },
+                    { root: 'etalon2/entity/Admin', targetLayer: 'entity' }
+                ],
+                globalRoot: '../../../'
+            };
+            await writeFile(join(presetDir, 'preset.source.ts'), `export default ${JSON.stringify(sourceConfig)};`);
+
+            const presetConfig = {
+                files: [
+                    {
+                        path: 'ui/UserCard.tsx',
+                        targetLayer: 'entity',
+                        sourceRoot: 'etalon/entity/User',
+                        tokens: {}
+                    },
+                    {
+                        path: 'ui/AdminCard.tsx',
+                        targetLayer: 'entity',
+                        sourceRoot: 'etalon2/entity/Admin',
+                        tokens: {}
+                    }
+                ]
+            };
+            await writeFile(join(presetDir, 'preset.config.json'), JSON.stringify(presetConfig));
+
+            await buildReversePreset(presetName, templatesDir);
+
+            expect(existsSync(join(presetDir, 'entity', 'ui', 'UserCard.tsx'))).toBe(true);
+            expect(existsSync(join(presetDir, 'entity', 'ui', 'AdminCard.tsx'))).toBe(true);
+        });
+
+        it('should merge tokens for duplicate paths in preset config', async () => {
+            const presetName = 'build-merge-tokens';
+            const presetDir = join(templatesDir, 'preset', presetName);
+            await initReversePreset(presetName, templatesDir);
+
+            const sourceConfig: PresetSourceConfig = {
+                root: etalonDir,
+                targetLayer: 'entity'
+            };
+            await writeFile(join(presetDir, 'preset.source.ts'), `export default ${JSON.stringify(sourceConfig)};`);
+
+            const presetConfig = {
+                files: [
+                    {
+                        path: 'model/types.ts',
+                        targetLayer: 'entity',
+                        tokens: { 'User': '{{entityName}}' }
+                    },
+                    {
+                        path: 'model/types.ts', // Duplicate path
+                        targetLayer: 'entity',
+                        tokens: { 'UserProfile': '{{entityName}}Profile' }
+                    }
+                ]
+            };
+            await writeFile(join(presetDir, 'preset.config.json'), JSON.stringify(presetConfig));
+
+            await buildReversePreset(presetName, templatesDir);
+
+            const resultPath = join(presetDir, 'entity', 'model', 'types.ts');
+            const content = await readFile(resultPath, 'utf-8');
+
+            // Both tokens should be replaced
+            expect(content).toContain('interface {{entityName}} {');
+            expect(content).toContain('interface {{entityName}}Profile extends');
+        });
     });
 });

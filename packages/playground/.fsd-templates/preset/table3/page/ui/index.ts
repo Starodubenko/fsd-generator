@@ -1,1 +1,1 @@
-export * from './{{name}}Page';
+export * from './{{entityName}}';

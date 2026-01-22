@@ -1,10 +1,10 @@
 
-export interface {{name}} {
+export interface {{entityName}} {
     id: string;
     name: string;
 }
 
-export const mock{{name}}Data: {{name}}[] = [
-    { id: '1', name: 'Test {{name}} 1' },
-    { id: '2', name: 'Test {{name}} 2' },
+export const mock{{entityName}}Data: {{entityName}}[] = [
+    { id: '1', name: 'Test {{entityName}} 1' },
+    { id: '2', name: 'Test {{entityName}} 2' },
 ];

@@ -6,6 +6,7 @@ export default {
     {
         "path": "index.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             
         }
@@ -13,6 +14,7 @@ export default {
     {
         "path": "model/index.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             
         }
@@ -20,6 +22,7 @@ export default {
     {
         "path": "model/model.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME
         }
@@ -27,6 +30,7 @@ export default {
     {
         "path": "ui/index.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME,
       "Users": EntityToken.ENTITY_NAME
@@ -35,6 +39,7 @@ export default {
     {
         "path": "ui/useCreateUser.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME
         }
@@ -42,6 +47,7 @@ export default {
     {
         "path": "ui/useDeleteUser.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME
         }
@@ -49,6 +55,7 @@ export default {
     {
         "path": "ui/useGetUsers.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME,
       "Users": EntityToken.ENTITY_NAME
@@ -57,6 +64,7 @@ export default {
     {
         "path": "ui/User.tsx",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME
         }
@@ -64,6 +72,7 @@ export default {
     {
         "path": "ui/useUpdateUser.ts",
         "targetLayer": FsdLayer.ENTITY,
+        "sourceRoot": "entities/User",
         "tokens": {
             "User": EntityToken.ENTITY_NAME
         }
@@ -71,6 +80,7 @@ export default {
     {
         "path": "index.ts",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -78,6 +88,7 @@ export default {
     {
         "path": "ui/CreateUser.styles.ts",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -85,6 +96,7 @@ export default {
     {
         "path": "ui/CreateUser.tsx",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -92,6 +104,7 @@ export default {
     {
         "path": "ui/DeleteUser.styles.ts",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -99,6 +112,7 @@ export default {
     {
         "path": "ui/DeleteUser.tsx",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -106,6 +120,7 @@ export default {
     {
         "path": "ui/EditUser.styles.ts",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -113,6 +128,7 @@ export default {
     {
         "path": "ui/EditUser.tsx",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -120,6 +136,7 @@ export default {
     {
         "path": "ui/index.ts",
         "targetLayer": FsdLayer.FEATURE,
+        "sourceRoot": "features/ManageUser",
         "tokens": {
             
         }
@@ -127,6 +144,7 @@ export default {
     {
         "path": "index.ts",
         "targetLayer": FsdLayer.WIDGET,
+        "sourceRoot": "widgets/UserWidget",
         "tokens": {
             
         }
@@ -134,6 +152,7 @@ export default {
     {
         "path": "ui/index.ts",
         "targetLayer": FsdLayer.WIDGET,
+        "sourceRoot": "widgets/UserWidget",
         "tokens": {
             "UserWidget": EntityToken.ENTITY_NAME
         }
@@ -141,6 +160,7 @@ export default {
     {
         "path": "ui/UserWidget.tsx",
         "targetLayer": FsdLayer.WIDGET,
+        "sourceRoot": "widgets/UserWidget",
         "tokens": {
             "UserWidget": EntityToken.ENTITY_NAME
         }
@@ -148,6 +168,7 @@ export default {
     {
         "path": "index.ts",
         "targetLayer": FsdLayer.PAGE,
+        "sourceRoot": "pages/UserPage",
         "tokens": {
             
         }
@@ -155,6 +176,7 @@ export default {
     {
         "path": "ui/index.ts",
         "targetLayer": FsdLayer.PAGE,
+        "sourceRoot": "pages/UserPage",
         "tokens": {
             "UserPage": EntityToken.ENTITY_NAME
         }
@@ -162,6 +184,7 @@ export default {
     {
         "path": "ui/UserPage.tsx",
         "targetLayer": FsdLayer.PAGE,
+        "sourceRoot": "pages/UserPage",
         "tokens": {
             "UserPage": EntityToken.ENTITY_NAME
         }
