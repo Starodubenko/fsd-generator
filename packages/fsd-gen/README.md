@@ -84,6 +84,11 @@ export default {
 - **Multi-Root Support**: Analyze multiple directories at once
 - **Automatic Conflict Resolution**: Numeric suffixes (User, User1, User2)
 - **Folder Name Normalization**: `user-action` → `UserAction`, `user_profile` → `UserProfile`
+
+**Plural/Singular Recognition**: Automatically detects both forms of names:
+- Analyzing "User" will also find "Users"
+- Analyzing "Users" will also find "User"
+- Works with common patterns: Category/Categories, Box/Boxes, etc.
 - **TypeScript Config**: Type-safe `preset.config.ts` with enums
 
 
