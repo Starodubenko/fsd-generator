@@ -1,6 +1,31 @@
 
+
 import { resolve } from 'path';
 import { EntityToken } from './constants.js';
+
+/**
+ * Converts a string to PascalCase.
+ * Handles kebab-case, snake_case, camelCase, and space-separated strings.
+ * Examples:
+ *   "user-action" -> "UserAction"
+ *   "user_profile" -> "UserProfile"
+ *   "user action" -> "UserAction"
+ *   "userAction" -> "UserAction"
+ */
+export function toPascalCase(str: string): string {
+    // First, split by common delimiters (hyphens, underscores, spaces)
+    const words = str.split(/[-_\s]+/);
+
+    // If we got multiple words, capitalize each
+    if (words.length > 1) {
+        return words
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join('');
+    }
+
+    // If single word, just ensure first letter is uppercase
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 /**
  * Generates naming variations for a given subject string

@@ -6,7 +6,8 @@ import { Project } from 'ts-morph';
 import {
     generateVariations,
     identifyTokens,
-    resolveSourceRoot
+    resolveSourceRoot,
+    toPascalCase
 } from './analyzeHelpers.js';
 import {
     loadSourceConfig,
@@ -42,7 +43,9 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
 
         console.log(`Analyzing source at: ${rootPath} (Layer: ${layer.targetLayer})`);
 
-        const subjectName = basename(rootPath);
+        // Normalize folder name to PascalCase for better token recognition
+        // e.g., "user-action" -> "UserAction"
+        const subjectName = toPascalCase(basename(rootPath));
         const variations = generateVariations(subjectName);
 
         // Discovery
@@ -86,17 +89,30 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
         return layerMap[layer] || `"${layer}"`;
     };
 
+    // Helper to convert token value to EntityToken enum reference
+    const tokenToEnum = (tokenValue: string): string => {
+        const tokenMap: Record<string, string> = {
+            '{{name}}': 'EntityToken.NAME',
+            '{{entityName}}': 'EntityToken.ENTITY_NAME',
+            '{{entityNameCamel}}': 'EntityToken.ENTITY_NAME_CAMEL',
+            '{{entityNameLower}}': 'EntityToken.ENTITY_NAME_LOWER',
+            '{{entityNameUpper}}': 'EntityToken.ENTITY_NAME_UPPER',
+            '{{entityNameKebab}}': 'EntityToken.ENTITY_NAME_KEBAB'
+        };
+        return tokenMap[tokenValue] || `"${tokenValue}"`;
+    };
+
     // Generate TypeScript content with enum values
     const filesContent = resultFiles.map(file => {
         const tokensStr = Object.entries(file.tokens)
-            .map(([key, value]) => `        "${key}": ${value.startsWith('{{') ? `EntityToken.${value.slice(2, -2).toUpperCase().replace(/([A-Z])/g, '_$1').replace(/^_/, '')}` : `"${value}"`}`)
+            .map(([key, value]) => `        "${key}": ${tokenToEnum(value)}`)
             .join(',\n');
 
         return `    {
         "path": "${file.path}",
         "targetLayer": ${layerToEnum(file.targetLayer)},
         "tokens": {
-${tokensStr}
+            ${tokensStr}
         }
     }`;
     }).join(',\n');
