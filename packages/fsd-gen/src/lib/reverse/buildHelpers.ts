@@ -4,7 +4,7 @@ import { readFile } from 'fs/promises';
 import { createJiti } from 'jiti';
 import { basename, join } from 'path';
 import { EntityToken } from './constants.js';
-import { PresetConfig, PresetConfigFile, PresetConfigTokenMap, PresetSourceConfig, PresetSourceItem } from './types.js';
+import { PresetConfig, PresetConfigFile, PresetConfigTokenMap, PresetSourceConfig, PresetSourceItem, NormalizedPresetSourceItem } from './types.js';
 
 /**
  * Loads the reverse engineering source configuration (preset.source.ts)
@@ -58,17 +58,58 @@ export async function loadReverseEnvironment(presetDir: string): Promise<{
 /**
  * Normalizes layer definitions from source configuration
  */
-export function normalizeLayers(sourceConfig: PresetSourceConfig): PresetSourceItem[] {
-    const layers: PresetSourceItem[] = [];
+export function normalizeLayers(sourceConfig: PresetSourceConfig): NormalizedPresetSourceItem[] {
+    const result: NormalizedPresetSourceItem[] = [];
+    
     if (sourceConfig.layers) {
-        layers.push(...sourceConfig.layers);
+        for (const layer of sourceConfig.layers) {
+            const roots = Array.isArray(layer.root) ? layer.root : [layer.root];
+            if (roots.length === 1) {
+                result.push({ root: roots[0], targetLayer: layer.targetLayer });
+            } else {
+                const basenames = roots.map(r => basename(r));
+                const nameCount = new Map();
+                const nameIndices = new Map();
+                basenames.forEach(name => { nameCount.set(name, (nameCount.get(name) || 0) + 1); });
+                roots.forEach((root, index) => {
+                    const name = basenames[index];
+                    const count = nameCount.get(name) || 1;
+                    if (count > 1) {
+                        const currentIndex = nameIndices.get(name) || 0;
+                        nameIndices.set(name, currentIndex + 1);
+                        const resolvedName = currentIndex === 0 ? name : `${name}${currentIndex}`;
+                        result.push({ root, targetLayer: layer.targetLayer, resolvedName });
+                    } else {
+                        result.push({ root, targetLayer: layer.targetLayer });
+                    }
+                });
+            }
+        }
     } else if (sourceConfig.root) {
-        layers.push({
-            root: sourceConfig.root,
-            targetLayer: sourceConfig.targetLayer || 'entity'
-        });
+        const roots = Array.isArray(sourceConfig.root) ? sourceConfig.root : [sourceConfig.root];
+        const targetLayer = sourceConfig.targetLayer || 'entity';
+        if (roots.length === 1) {
+            result.push({ root: roots[0], targetLayer });
+        } else {
+            const basenames = roots.map(r => basename(r));
+            const nameCount = new Map();
+            const nameIndices = new Map();
+            basenames.forEach(name => { nameCount.set(name, (nameCount.get(name) || 0) + 1); });
+            roots.forEach((root, index) => {
+                const name = basenames[index];
+                const count = nameCount.get(name) || 1;
+                if (count > 1) {
+                    const currentIndex = nameIndices.get(name) || 0;
+                    nameIndices.set(name, currentIndex + 1);
+                    const resolvedName = currentIndex === 0 ? name : `${name}${currentIndex}`;
+                    result.push({ root, targetLayer, resolvedName });
+                } else {
+                    result.push({ root, targetLayer });
+                }
+            });
+        }
     }
-    return layers;
+    return result;
 }
 
 /**
@@ -108,7 +149,7 @@ export function applyTokens(content: string, tokens: PresetConfigTokenMap): stri
 /**
  * Guesses naming conventions (prefixes/suffixes) from source roots
  */
-export function guessConventions(layers: PresetSourceItem[], entityToken: string): Record<string, string> {
+export function guessConventions(layers: NormalizedPresetSourceItem[], entityToken: string): Record<string, string> {
     const helpers: Record<string, string> = {};
     const token = entityToken || 'User'; // Fallback
 
@@ -165,7 +206,7 @@ ${Object.entries(helpers).map(([k, v]) => `            ${k.replace('Prefix', 'Sl
 export function generateEjectedPresetContent(
     presetName: string,
     files: PresetConfigFile[],
-    layers: PresetSourceItem[],
+    layers: NormalizedPresetSourceItem[],
     entityToken: string
 ): string {
     const actions = files.map(file => {

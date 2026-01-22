@@ -44,8 +44,10 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
         console.log(`Analyzing source at: ${rootPath} (Layer: ${layer.targetLayer})`);
 
         // Normalize folder name to PascalCase for better token recognition
+        // Use resolvedName if provided (for conflict resolution), otherwise use basename
         // e.g., "user-action" -> "UserAction"
-        const subjectName = toPascalCase(basename(rootPath));
+        const folderName = layer.resolvedName || basename(rootPath);
+        const subjectName = toPascalCase(folderName);
         const variations = generateVariations(subjectName);
 
         // Discovery
@@ -105,8 +107,8 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
     // Generate TypeScript content with enum values
     const filesContent = resultFiles.map(file => {
         const tokensStr = Object.entries(file.tokens)
-            .map(([key, value]) => `        "${key}": ${tokenToEnum(value)}`)
-            .join(',\n');
+            .map(([key, value]) => `"${key}": ${tokenToEnum(value)}`)
+            .join(',\n      ');
 
         return `    {
         "path": "${file.path}",

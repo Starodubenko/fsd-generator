@@ -45,6 +45,48 @@ Reverse engineer existing code into reusable presets.
 2.  **Analyze**: `fsd-gen reverse:analyze <preset-name>`
 3.  **Build**: `fsd-gen reverse:build <preset-name> [--mode short|ejected]`
 
+#### Configuration Examples
+
+**Single Root:**
+```typescript
+export default {
+  root: 'src/entities/User',
+  targetLayer: 'entity'
+};
+```
+
+**Multiple Roots with Conflict Resolution:**
+```typescript
+export default {
+  root: [
+    'src/entities/User',
+    'src/features/User',  // Auto-resolved as User1
+    'src/widgets/User'    // Auto-resolved as User2
+  ],
+  targetLayer: 'entity'
+};
+```
+
+**Multiple Layers with Array Support:**
+```typescript
+export default {
+  layers: [
+    { root: 'src/entities/User', targetLayer: 'entity' },
+    { 
+      root: ['src/features/Auth', 'src/features/Payment'],
+      targetLayer: 'feature' 
+    }
+  ]
+};
+```
+
+**Features:**
+- **Multi-Root Support**: Analyze multiple directories at once
+- **Automatic Conflict Resolution**: Numeric suffixes (User, User1, User2)
+- **Folder Name Normalization**: `user-action` → `UserAction`, `user_profile` → `UserProfile`
+- **TypeScript Config**: Type-safe `preset.config.ts` with enums
+
+
 #### Modes
 -   **short** (default): Generates a thin `preset.ts` that auto-discovers templates at runtime.
 -   **ejected**: Compiles and copies all source files into the preset folder as static templates.

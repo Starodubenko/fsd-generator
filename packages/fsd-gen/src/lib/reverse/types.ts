@@ -1,9 +1,30 @@
 
+
 import { EntityTokenValue, FsdLayerValue } from './constants.js';
 
 export interface PresetSourceItem {
+    /**
+     * Root directory or array of root directories to analyze.
+     * If array is provided and folder names conflict, indices will be appended.
+     * Example: ['src/entities/User', 'src/features/User'] -> User, User1
+     */
+    root: string | string[];
+    targetLayer: FsdLayerValue;
+    /**
+     * Resolved name for this source (used when multiple roots have conflicting names)
+     * If not set, basename of root is used
+     */
+    resolvedName?: string;
+}
+
+/**
+ * Normalized version of PresetSourceItem where root is always a string.
+ * This is returned by normalizeLayers() after expanding array roots.
+ */
+export interface NormalizedPresetSourceItem {
     root: string;
     targetLayer: FsdLayerValue;
+    resolvedName?: string;
 }
 
 export interface PresetSourceConfig {
@@ -15,10 +36,13 @@ export interface PresetSourceConfig {
     mode?: 'short' | 'ejected';
 
     /**
-     * The root path of the reference code (etalon)
+     * The root path of the reference code (etalon).
+     * Can be a single path or array of paths.
+     * If array is provided and folder names conflict, indices will be appended.
+     * Example: ['src/entities/User', 'src/features/User'] -> User, User1
      * @deprecated Use layers for multiple sources or simpler specific config
      */
-    root?: string;
+    root?: string | string[];
 
     /**
      * The target layer for the preset (default: 'entity')
