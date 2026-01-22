@@ -1,17 +1,17 @@
 
-import { Project } from 'ts-morph';
-import { join, resolve, basename, relative } from 'path';
-import { writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import {
-    loadSourceConfig,
-    normalizeLayers
-} from './buildHelpers.js';
+import { writeFile } from 'fs/promises';
+import { basename, join, relative, resolve } from 'path';
+import { Project } from 'ts-morph';
 import {
     generateVariations,
     identifyTokens,
     resolveSourceRoot
 } from './analyzeHelpers.js';
+import {
+    loadSourceConfig,
+    normalizeLayers
+} from './buildHelpers.js';
 import type { PresetConfig, PresetConfigFile } from './types.js';
 
 /**
@@ -70,11 +70,48 @@ export async function analyzeReversePreset(presetName: string, templatesDir: str
         sourceFiles.forEach(f => project.removeSourceFile(f));
     }
 
-    // Step 3: Save results
+    // Step 3: Save results as TypeScript file with enum values
     const outputConfig: PresetConfig = { files: resultFiles };
-    const outputPath = join(presetDir, 'preset.config.json');
+    const outputPath = join(presetDir, 'preset.config.ts');
 
-    await writeFile(outputPath, JSON.stringify(outputConfig, null, 2), 'utf-8');
+    // Helper to convert layer string to FsdLayer enum reference
+    const layerToEnum = (layer: string): string => {
+        const layerMap: Record<string, string> = {
+            'entity': 'FsdLayer.ENTITY',
+            'feature': 'FsdLayer.FEATURE',
+            'widget': 'FsdLayer.WIDGET',
+            'page': 'FsdLayer.PAGE',
+            'shared': 'FsdLayer.SHARED'
+        };
+        return layerMap[layer] || `"${layer}"`;
+    };
+
+    // Generate TypeScript content with enum values
+    const filesContent = resultFiles.map(file => {
+        const tokensStr = Object.entries(file.tokens)
+            .map(([key, value]) => `        "${key}": ${value.startsWith('{{') ? `EntityToken.${value.slice(2, -2).toUpperCase().replace(/([A-Z])/g, '_$1').replace(/^_/, '')}` : `"${value}"`}`)
+            .join(',\n');
+
+        return `    {
+        "path": "${file.path}",
+        "targetLayer": ${layerToEnum(file.targetLayer)},
+        "tokens": {
+${tokensStr}
+        }
+    }`;
+    }).join(',\n');
+
+    const tsContent = `import type { ReversePresetConfig } from '@starodubenko/fsd-gen';
+import { EntityToken, FsdLayer } from '@starodubenko/fsd-gen';
+
+export default {
+    "files": [
+${filesContent}
+    ]
+} satisfies ReversePresetConfig;
+`;
+
+    await writeFile(outputPath, tsContent, 'utf-8');
 
     console.log(`Analysis complete. Config written to: ${outputPath}`);
 }

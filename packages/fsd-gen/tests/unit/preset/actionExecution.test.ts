@@ -250,4 +250,65 @@ describe('actionExecution', () => {
             expect(fsMock.writeFile).toHaveBeenCalled();
         });
     });
+
+    describe('targetDir configuration', () => {
+        it('should use targetDir when specified in config', async () => {
+            const action: PresetFileAction = {
+                type: ACTION_TYPES.FILE,
+                path: 'entities/User/index.ts',
+                template: 'index.ts'
+            };
+
+            const configWithTargetDir: FsdGenConfig = {
+                rootDir: 'src',
+                targetDir: 'output',
+                templatesDir: '.templates'
+            };
+
+            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('export * from "./User";');
+            const fsMock = await import('node:fs/promises');
+            vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
+            vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+
+            await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, configWithTargetDir);
+
+            // Verify writeFile was called with targetDir path
+            expect(fsMock.writeFile).toHaveBeenCalled();
+            const writeFileCall = vi.mocked(fsMock.writeFile).mock.calls[0];
+            const writtenPath = writeFileCall[0] as string;
+
+            // Path should include 'output' instead of 'src'
+            expect(writtenPath).toContain('output');
+            expect(writtenPath).toContain('entities/User/index.ts');
+        });
+
+        it('should fallback to rootDir when targetDir is not specified', async () => {
+            const action: PresetFileAction = {
+                type: ACTION_TYPES.FILE,
+                path: 'entities/User/index.ts',
+                template: 'index.ts'
+            };
+
+            const configWithoutTargetDir: FsdGenConfig = {
+                rootDir: 'src',
+                templatesDir: '.templates'
+            };
+
+            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('export * from "./User";');
+            const fsMock = await import('node:fs/promises');
+            vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
+            vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+
+            await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, configWithoutTargetDir);
+
+            // Verify writeFile was called with rootDir path
+            expect(fsMock.writeFile).toHaveBeenCalled();
+            const writeFileCall = vi.mocked(fsMock.writeFile).mock.calls[0];
+            const writtenPath = writeFileCall[0] as string;
+
+            // Path should include 'src' (rootDir)
+            expect(writtenPath).toContain('src');
+            expect(writtenPath).toContain('entities/User/index.ts');
+        });
+    });
 });

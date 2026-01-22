@@ -1,7 +1,9 @@
 
+import { EntityTokenValue, FsdLayerValue } from './constants.js';
+
 export interface PresetSourceItem {
     root: string;
-    targetLayer: 'entity' | 'feature' | 'widget' | 'page' | 'shared';
+    targetLayer: FsdLayerValue;
 }
 
 export interface PresetSourceConfig {
@@ -21,7 +23,7 @@ export interface PresetSourceConfig {
     /**
      * The target layer for the preset (default: 'entity')
      */
-    targetLayer?: 'entity' | 'feature' | 'widget' | 'page' | 'shared';
+    targetLayer?: FsdLayerValue;
 
     /**
      * Multiple sources for different layers
@@ -40,13 +42,17 @@ export interface PresetSourceConfig {
     };
 }
 
+/**
+ * Maps original strings found in source code to entity tokens
+ * Example: { "User": "{{entityName}}", "user": "{{entityNameCamel}}" }
+ */
 export interface PresetConfigTokenMap {
-    [original: string]: string;
+    [original: string]: EntityTokenValue | string; // Allow string for backward compatibility
 }
 
 export interface PresetConfigFile {
     path: string;
-    targetLayer: string; // Store which layer this file belongs to
+    targetLayer: FsdLayerValue | string; // Store which layer this file belongs to, allow string for backward compatibility
     tokens: PresetConfigTokenMap;
     // We might add imports later if needed for complex resolving
 }

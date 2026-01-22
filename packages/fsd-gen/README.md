@@ -49,6 +49,41 @@ Reverse engineer existing code into reusable presets.
 -   **short** (default): Generates a thin `preset.ts` that auto-discovers templates at runtime.
 -   **ejected**: Compiles and copies all source files into the preset folder as static templates.
 
+#### TypeScript Preset Configs
+
+The `reverse:analyze` command generates a type-safe `preset.config.ts` file using enums:
+
+```typescript
+import type { ReversePresetConfig } from '@starodubenko/fsd-gen';
+import { EntityToken, FsdLayer } from '@starodubenko/fsd-gen';
+
+export default {
+    files: [{
+        path: "index.ts",
+        targetLayer: FsdLayer.ENTITY,  // Type-safe layer
+        tokens: {
+            "User": EntityToken.NAME    // Type-safe token
+        }
+    }]
+} satisfies ReversePresetConfig;
+```
+
+**Available Enums:**
+
+- **`EntityToken`**: Token types for code generation
+  - `NAME` / `ENTITY_NAME` - PascalCase (e.g., `User`)
+  - `ENTITY_NAME_CAMEL` - camelCase (e.g., `user`)
+  - `ENTITY_NAME_LOWER` - lowercase (e.g., `user`)
+  - `ENTITY_NAME_UPPER` - UPPERCASE (e.g., `USER`)
+  - `ENTITY_NAME_KEBAB` - kebab-case (e.g., `user-profile`)
+
+- **`FsdLayer`**: FSD architectural layers
+  - `ENTITY` - Business entities
+  - `FEATURE` - User interactions
+  - `WIDGET` - Composite UI blocks
+  - `PAGE` - Application pages
+  - `SHARED` - Reusable utilities
+
 ## ⚙️ Configuration
 
 Create an `fsdgen.config.ts` in your project root:
@@ -62,6 +97,13 @@ export default defineConfig({
    * Defaults to "src".
    */
   rootDir: 'src',
+
+  /**
+   * Target directory for generated code.
+   * If not specified, defaults to rootDir.
+   * Useful for generating code to a different location.
+   */
+  targetDir: 'src',  // Optional: generate to a different directory
 
   /**
    * Alias configuration.
@@ -86,6 +128,36 @@ export default defineConfig({
    * "strict" | "warn" | "off"
    */
   naming: 'warn',
+});
+```
+
+**Configuration Options:**
+
+- **`rootDir`** (default: `"src"`): Root directory of your source code. Used for path resolution and imports.
+- **`targetDir`** (default: `rootDir`): Directory where generated code will be placed. Useful for generating to a different location than your source code.
+- **`aliases`**: Import path aliases for FSD layers.
+- **`templatesDir`**: Location of custom templates.
+- **`naming`**: Naming convention enforcement level.
+
+**Practical Examples:**
+
+```typescript
+// Example 1: Generate to a separate output directory
+export default defineConfig({
+  rootDir: 'src',
+  targetDir: 'generated',  // Code will be generated to ./generated/
+});
+
+// Example 2: Generate to a different project
+export default defineConfig({
+  rootDir: 'src',
+  targetDir: '../backend/src',  // Generate to sibling project
+});
+
+// Example 3: Default behavior (targetDir = rootDir)
+export default defineConfig({
+  rootDir: 'src',
+  // targetDir not specified, defaults to 'src'
 });
 ```
 

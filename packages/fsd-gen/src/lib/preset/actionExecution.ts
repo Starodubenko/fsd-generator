@@ -182,7 +182,7 @@ export async function executeFileAction(
 ): Promise<void> {
     const targetPath = join(
         process.cwd(),
-        config.rootDir!,
+        config.targetDir || config.rootDir!,
         processTemplate(action.path, variables)
     );
 

@@ -8,6 +8,7 @@ import {
     generateShortPresetContent,
     generateEjectedPresetContent
 } from '../../../src/lib/reverse/buildHelpers.js';
+import { EntityToken } from '../../../src/lib/reverse/constants.js';
 
 describe('buildHelpers', () => {
     describe('normalizeLayers', () => {
@@ -31,7 +32,7 @@ describe('buildHelpers', () => {
         it('should return the token mapping to {{name}}', () => {
             const config = {
                 files: [
-                    { tokens: { 'User': '{{name}}' } }
+                    { tokens: { 'User': EntityToken.NAME } }
                 ]
             } as any;
             expect(detectEntityToken(config)).toBe('User');
@@ -40,10 +41,46 @@ describe('buildHelpers', () => {
         it('should return the token mapping to {{entityName}}', () => {
             const config = {
                 files: [
-                    { tokens: { 'Product': '{{entityName}}' } }
+                    { tokens: { 'Product': EntityToken.ENTITY_NAME } }
                 ]
             } as any;
             expect(detectEntityToken(config)).toBe('Product');
+        });
+
+        it('should return the token mapping to {{entityNameCamel}}', () => {
+            const config = {
+                files: [
+                    { tokens: { 'userProfile': EntityToken.ENTITY_NAME_CAMEL } }
+                ]
+            } as any;
+            expect(detectEntityToken(config)).toBe('userProfile');
+        });
+
+        it('should return the token mapping to {{entityNameLower}}', () => {
+            const config = {
+                files: [
+                    { tokens: { 'userprofile': EntityToken.ENTITY_NAME_LOWER } }
+                ]
+            } as any;
+            expect(detectEntityToken(config)).toBe('userprofile');
+        });
+
+        it('should return the token mapping to {{entityNameUpper}}', () => {
+            const config = {
+                files: [
+                    { tokens: { 'USERPROFILE': EntityToken.ENTITY_NAME_UPPER } }
+                ]
+            } as any;
+            expect(detectEntityToken(config)).toBe('USERPROFILE');
+        });
+
+        it('should return the token mapping to {{entityNameKebab}}', () => {
+            const config = {
+                files: [
+                    { tokens: { 'user-profile': EntityToken.ENTITY_NAME_KEBAB } }
+                ]
+            } as any;
+            expect(detectEntityToken(config)).toBe('user-profile');
         });
 
         it('should return empty string if no entity token found', () => {

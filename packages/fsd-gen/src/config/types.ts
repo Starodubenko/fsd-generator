@@ -1,4 +1,4 @@
-import { FSD_LAYERS, NAMING_MODES, ACTION_TYPES, DISCOVERY_MODES, DEFAULT_ROOT_DIR } from '../lib/constants.js';
+import { ACTION_TYPES, DEFAULT_ROOT_DIR, DISCOVERY_MODES, FSD_LAYERS, NAMING_MODES } from '../lib/constants.js';
 
 export type Layer = (typeof FSD_LAYERS)[keyof typeof FSD_LAYERS];
 
@@ -8,6 +8,14 @@ export interface FsdGenConfig {
      * @default "src"
      */
     rootDir?: string;
+
+    /**
+     * Target directory for generated code.
+     * If not specified, defaults to rootDir.
+     * Useful for generating code to a different location.
+     * @default rootDir
+     */
+    targetDir?: string;
 
     /**
      * Alias configuration.

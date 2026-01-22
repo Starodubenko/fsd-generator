@@ -1,5 +1,6 @@
 
 import { resolve } from 'path';
+import { EntityToken } from './constants.js';
 
 /**
  * Generates naming variations for a given subject string
@@ -23,15 +24,26 @@ export function identifyTokens(content: string, variations: ReturnType<typeof ge
     const tokens: Record<string, string> = {};
 
     if (content.includes(variations.pascal)) {
-        tokens[variations.pascal] = '{{entityName}}';
+        tokens[variations.pascal] = EntityToken.ENTITY_NAME;
     }
 
-    // Only add camel if it differs from pascal (e.g. "User" vs "user" - wait, User/User is same)
+    // Only add camel if it differs from pascal (e.g. "User" vs "user")
     if (variations.camel !== variations.pascal && content.includes(variations.camel)) {
-        tokens[variations.camel] = '{{entityNameCamel}}';
+        tokens[variations.camel] = EntityToken.ENTITY_NAME_CAMEL;
     }
 
-    // We can add more variations here if needed (kebab, upper, etc.)
+    if (variations.lower !== variations.camel && variations.lower !== variations.pascal && content.includes(variations.lower)) {
+        tokens[variations.lower] = EntityToken.ENTITY_NAME_LOWER;
+    }
+
+    if (variations.upper !== variations.pascal && content.includes(variations.upper)) {
+        tokens[variations.upper] = EntityToken.ENTITY_NAME_UPPER;
+    }
+
+    if (variations.kebab !== variations.camel && content.includes(variations.kebab)) {
+        tokens[variations.kebab] = EntityToken.ENTITY_NAME_KEBAB;
+    }
+
     return tokens;
 }
 

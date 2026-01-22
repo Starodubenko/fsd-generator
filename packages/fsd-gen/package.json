@@ -5,6 +5,16 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./reverse": {
+      "types": "./dist/lib/reverse/types.d.ts",
+      "import": "./dist/lib/reverse/types.js"
+    }
+  },
   "bin": {
     "fsd-gen": "dist/cli.js"
   },

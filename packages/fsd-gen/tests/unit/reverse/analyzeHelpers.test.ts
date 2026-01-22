@@ -6,6 +6,7 @@ import {
     identifyTokens,
     resolveSourceRoot
 } from '../../../src/lib/reverse/analyzeHelpers.js';
+import { EntityToken } from '../../../src/lib/reverse/constants.js';
 
 describe('analyzeHelpers', () => {
     describe('generateVariations', () => {
@@ -23,22 +24,49 @@ describe('analyzeHelpers', () => {
         it('should find pascal token', () => {
             const variations = generateVariations('User');
             const tokens = identifyTokens('class User {}', variations);
-            expect(tokens['User']).toBe('{{entityName}}');
+            expect(tokens['User']).toBe(EntityToken.ENTITY_NAME);
         });
 
         it('should find camel token if different', () => {
             const variations = generateVariations('User');
             const tokens = identifyTokens('const user = new User()', variations);
-            expect(tokens['User']).toBe('{{entityName}}');
-            expect(tokens['user']).toBe('{{entityNameCamel}}');
+            expect(tokens['User']).toBe(EntityToken.ENTITY_NAME);
+            expect(tokens['user']).toBe(EntityToken.ENTITY_NAME_CAMEL);
+        });
+
+        it('should find lower token', () => {
+            const variations = generateVariations('UserProfile');
+            const tokens = identifyTokens('const path = "/userprofile"', variations);
+            expect(tokens['userprofile']).toBe(EntityToken.ENTITY_NAME_LOWER);
+        });
+
+        it('should find upper token', () => {
+            const variations = generateVariations('UserProfile');
+            const tokens = identifyTokens('const TYPE = "USERPROFILE"', variations);
+            expect(tokens['USERPROFILE']).toBe(EntityToken.ENTITY_NAME_UPPER);
+        });
+
+        it('should find kebab token', () => {
+            const variations = generateVariations('UserProfile');
+            const tokens = identifyTokens('div.user-profile {}', variations);
+            expect(tokens['user-profile']).toBe(EntityToken.ENTITY_NAME_KEBAB);
         });
 
         it('should not add camel token if same as pascal', () => {
             const variations = generateVariations('user'); // Already lowercase
             const tokens = identifyTokens('user', variations);
             // pascal will be 'User', camel will be 'user'
-            expect(tokens['user']).toBe('{{entityNameCamel}}');
+            expect(tokens['user']).toBe(EntityToken.ENTITY_NAME_CAMEL);
             expect(tokens['User']).toBeUndefined();
+        });
+
+        it('should handle single word subject correctly (matching camel/lower/kebab)', () => {
+            const variations = generateVariations('User');
+            // User: pascal: User, camel: user, lower: user, upper: USER, kebab: user
+            const tokens = identifyTokens('user USER', variations);
+            expect(tokens['user']).toBe(EntityToken.ENTITY_NAME_CAMEL); // First one wins in our implementation logic
+            expect(tokens['USER']).toBe(EntityToken.ENTITY_NAME_UPPER);
+            expect(Object.keys(tokens)).toHaveLength(2);
         });
     });
 

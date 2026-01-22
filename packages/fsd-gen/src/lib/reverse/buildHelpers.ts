@@ -1,9 +1,10 @@
 
-import { readFile } from 'fs/promises';
-import { join, resolve, basename } from 'path';
 import { existsSync } from 'fs';
+import { readFile } from 'fs/promises';
 import { createJiti } from 'jiti';
-import { PresetConfig, PresetSourceConfig, PresetSourceItem, PresetConfigTokenMap, PresetConfigFile } from './types.js';
+import { basename, join } from 'path';
+import { EntityToken } from './constants.js';
+import { PresetConfig, PresetConfigFile, PresetConfigTokenMap, PresetSourceConfig, PresetSourceItem } from './types.js';
 
 /**
  * Loads the reverse engineering source configuration (preset.source.ts)
@@ -21,17 +22,25 @@ export async function loadSourceConfig(presetDir: string): Promise<PresetSourceC
 }
 
 /**
- * Loads the reverse engineering preset configuration (preset.config.json)
+ * Loads the reverse engineering preset configuration (preset.config.ts or preset.config.json)
  */
 export async function loadPresetConfig(presetDir: string): Promise<PresetConfig> {
-    const configPath = join(presetDir, 'preset.config.json');
-
-    if (!existsSync(configPath)) {
-        throw new Error(`Missing preset config file: ${configPath}`);
+    // Try TypeScript config first
+    const tsConfigPath = join(presetDir, 'preset.config.ts');
+    if (existsSync(tsConfigPath)) {
+        const jiti = createJiti(import.meta.url);
+        const configModule = await jiti.import(tsConfigPath);
+        return (configModule as { default: PresetConfig }).default || (configModule as PresetConfig);
     }
 
-    const presetConfigRaw = await readFile(configPath, 'utf-8');
-    return JSON.parse(presetConfigRaw);
+    // Fallback to JSON config for backward compatibility
+    const jsonConfigPath = join(presetDir, 'preset.config.json');
+    if (existsSync(jsonConfigPath)) {
+        const presetConfigRaw = await readFile(jsonConfigPath, 'utf-8');
+        return JSON.parse(presetConfigRaw);
+    }
+
+    throw new Error(`Missing preset config file: ${tsConfigPath} or ${jsonConfigPath}`);
 }
 
 /**
@@ -68,7 +77,12 @@ export function normalizeLayers(sourceConfig: PresetSourceConfig): PresetSourceI
 export function detectEntityToken(presetConfig: PresetConfig): string {
     for (const file of presetConfig.files) {
         for (const [token, replacement] of Object.entries(file.tokens)) {
-            if (replacement === '{{name}}' || replacement === '{{entityName}}') {
+            if (replacement === EntityToken.NAME ||
+                replacement === EntityToken.ENTITY_NAME ||
+                replacement === EntityToken.ENTITY_NAME_CAMEL ||
+                replacement === EntityToken.ENTITY_NAME_LOWER ||
+                replacement === EntityToken.ENTITY_NAME_UPPER ||
+                replacement === EntityToken.ENTITY_NAME_KEBAB) {
                 return token;
             }
         }

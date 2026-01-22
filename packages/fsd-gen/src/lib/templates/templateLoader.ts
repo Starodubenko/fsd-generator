@@ -1,9 +1,10 @@
 import { readFile, readdir, stat } from 'fs/promises';
-import { join, dirname, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import { createJiti } from 'jiti';
-import { TEMPLATE_FILES, PRESET_DIRS } from '../constants.js';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { TemplateContext } from '../../config/types.js';
+import { PRESET_DIRS, TEMPLATE_FILES } from '../constants.js';
+import { EntityToken } from '../reverse/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -58,7 +59,15 @@ export async function readComponentTemplate(templateDir: string): Promise<string
     const extensions = ['.tsx', '.ts', '.js'];
 
     // Check for Component.tsx or tokenized names like {{name}}.tsx
-    const possibleNames = ['Component', '{{name}}', '{{entityName}}'];
+    const possibleNames = [
+        'Component',
+        EntityToken.NAME,
+        EntityToken.ENTITY_NAME,
+        EntityToken.ENTITY_NAME_CAMEL,
+        EntityToken.ENTITY_NAME_LOWER,
+        EntityToken.ENTITY_NAME_UPPER,
+        EntityToken.ENTITY_NAME_KEBAB
+    ];
 
     // Check for Component.tsx, {{name}}.tsx, etc. that are modules
     for (const name of possibleNames) {
@@ -90,8 +99,12 @@ export async function readComponentTemplate(templateDir: string): Promise<string
         .map(f => typeof f === 'string' ? f : (f as any).name)
         .filter(f =>
             f && (
-                f.includes('{{name}}') ||
-                f.includes('{{entityName}}') ||
+                f.includes(EntityToken.NAME) ||
+                f.includes(EntityToken.ENTITY_NAME) ||
+                f.includes(EntityToken.ENTITY_NAME_CAMEL) ||
+                f.includes(EntityToken.ENTITY_NAME_LOWER) ||
+                f.includes(EntityToken.ENTITY_NAME_UPPER) ||
+                f.includes(EntityToken.ENTITY_NAME_KEBAB) ||
                 (f.startsWith('Component') && (f.endsWith('.tsx') || f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.jsx')))
             )
         );
