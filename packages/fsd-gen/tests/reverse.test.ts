@@ -103,12 +103,15 @@ describe('Reverse Preset Generation', () => {
 
             await analyzeReversePreset(presetName, templatesDir);
 
-            const configPath = join(presetDir, 'preset.config.json');
+            const configPath = join(presetDir, 'preset.config.ts');
             expect(existsSync(configPath)).toBe(true);
-            const config = JSON.parse(await readFile(configPath, 'utf-8'));
 
-            expect(config.files.length).toBeGreaterThan(0);
-            expect(config.files[0].targetLayer).toBe('entity');
+            // Read and verify the TypeScript config file
+            const configContent = await readFile(configPath, 'utf-8');
+            expect(configContent).toContain('import type { ReversePresetConfig }');
+            expect(configContent).toContain('import { EntityToken, FsdLayer }');
+            expect(configContent).toContain('satisfies ReversePresetConfig');
+            expect(configContent).toContain('FsdLayer.ENTITY');
         });
     });
 
