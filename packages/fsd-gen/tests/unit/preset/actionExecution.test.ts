@@ -10,17 +10,32 @@ import * as resolvePaths from '../../../src/lib/naming/resolvePaths.js';
 // Mock dependencies
 // Mock dependencies
 vi.mock('../../../src/lib/generators/generate.js');
-vi.mock('../../../src/lib/templates/templateLoader.js');
+vi.mock('../../../src/lib/templates/templateLoader.js', () => {
+    return {
+        processTemplate: vi.fn().mockImplementation((content, variables) => {
+            if (typeof content === 'function') return content(variables);
+            if (typeof content !== 'string') return content;
+            return content.replace(/\{\s*\{\s*([\w.]+)\s*\}\s*\}/g, (_, key) => {
+                const value = key.split('.').reduce((obj: any, k: string) => obj && obj[k], variables);
+                return String(value ?? '');
+            });
+        }),
+    };
+});
 vi.mock('../../../src/lib/naming/resolvePaths.js');
 vi.mock('../../../src/lib/barrels/updateBarrels.js'); // Mock updateBarrel to prevent FS operations
-vi.mock('node:fs/promises'); // Add fs mock
+vi.mock('node:fs/promises', () => ({
+    readFile: vi.fn().mockResolvedValue('template content'),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    stat: vi.fn().mockResolvedValue({ isDirectory: () => true })
+}));
 
 describe('actionExecution', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
         // Setup default mocks
-        vi.spyOn(templateLoader, 'processTemplate').mockImplementation((tmpl) => tmpl as string);
         vi.spyOn(resolvePaths, 'resolveFsdPaths').mockReturnValue({
             layerPath: '/mock/entities',
             slicePath: '/mock/entities/User',
@@ -88,6 +103,26 @@ describe('actionExecution', () => {
             // Verify it retains other variables
             expect(context).toHaveProperty('extraGlobal', 'something');
         });
+
+        it('should process template path with variables', async () => {
+            const config: FsdGenConfig = { rootDir: 'src' };
+            const action: PresetComponentAction = {
+                type: ACTION_TYPES.COMPONENT,
+                layer: FSD_LAYERS.ENTITY,
+                slice: 'User',
+                template: '{{entityNameCamel}}.tsx'
+            };
+            const variables = { entityNameCamel: 'user' };
+
+            await executeComponentAction(action, variables, config);
+
+            expect(generateModule.generateComponent).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                'user.tsx',
+                undefined
+            );
+        });
     });
 
     // Shared variables for all tests
@@ -144,6 +179,26 @@ describe('actionExecution', () => {
             expect(context.base.name).toBe('User');
             expect(context.layer.entity.apiPath).toBe('@entities/User/ui');
         });
+
+        it('should process template path with variables', async () => {
+            const config: FsdGenConfig = { rootDir: 'src' };
+            const action: PresetHookAction = {
+                type: ACTION_TYPES.HOOK,
+                layer: FSD_LAYERS.ENTITY,
+                slice: 'User',
+                template: 'use{{entityName}}.ts'
+            };
+            const variables = { entityName: 'User' };
+
+            await executeHookAction(action, variables, config);
+
+            expect(generateModule.generateHook).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.any(Object),
+                'useUser.ts',
+                undefined
+            );
+        });
     });
 
     describe('executeStylesAction', () => {
@@ -189,15 +244,15 @@ describe('actionExecution', () => {
             vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
 
 
-            // executeFileAction uses processTemplate to resolve the path AND the content
+            // executeFileAction uses processTemplate to resolve the path AND the template name AND the content
             // We want to capture the context used when processing the CONTENT
-            // The first call is for path resolution, second for content
+            // The first call is for path resolution, second for template name, third for content
             await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, commonConfig);
 
-            expect(templateLoader.processTemplate).toHaveBeenCalledTimes(2);
+            expect(templateLoader.processTemplate).toHaveBeenCalledTimes(3);
 
-            // The second call to processTemplate should receive the context
-            const contentCallArgs = vi.mocked(templateLoader.processTemplate).mock.calls[1];
+            // The third call to processTemplate should receive the context
+            const contentCallArgs = vi.mocked(templateLoader.processTemplate).mock.calls[2];
             const context = contentCallArgs[1] as GeneratorContext;
 
             // Verify template keys
@@ -210,6 +265,31 @@ describe('actionExecution', () => {
             // Verify keys from PresetHelpers
             expect(context.base.name).toBe('User');
             expect(context.layer.entity.apiPath).toBe('@entities/User/ui');
+        });
+
+        it('should process template and path with variables', async () => {
+            const action: PresetFileAction = {
+                type: ACTION_TYPES.FILE,
+                path: 'model/{{entityNameCamel}}.ts',
+                template: '{{entityNameCamel}}.ts'
+            };
+            const variables = { entityNameCamel: 'user', componentName: 'User', name: 'User' };
+            const config: FsdGenConfig = { rootDir: 'src' };
+
+            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('template content');
+            const fsMock = await import('node:fs/promises');
+            vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
+            vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+
+            await executeFileAction(action, variables, config);
+
+            // Path resolution
+            expect(templateLoader.processTemplate).toHaveBeenCalledWith('model/{{entityNameCamel}}.ts', expect.any(Object));
+            // Template path resolution (now uses processTemplate)
+            expect(templateLoader.processTemplate).toHaveBeenCalledWith('{{entityNameCamel}}.ts', expect.any(Object));
+
+            // We can't easily spy on loadFileTemplate as it's a local call, but we can check if it was called via indirect means if needed.
+            // For this test, verifying processTemplate calls is sufficient as we are testing if tokens are resolved.
         });
     });
 
@@ -309,6 +389,38 @@ describe('actionExecution', () => {
             // Path should include 'src' (rootDir)
             expect(writtenPath).toContain('src');
             expect(writtenPath).toContain('entities/User/index.ts');
+        });
+    });
+
+    describe('prepareActionVariables', () => {
+        it('should resolve tokens in custom action variables', () => {
+            const action: any = {
+                variables: {
+                    customPath: 'entities/{{nameLower}}/ui'
+                }
+            };
+            const name = 'UserProfile';
+            const globalVars = {};
+
+            const vars = actionExecutionModule.prepareActionVariables(action, name, globalVars);
+
+            expect(vars.customPath).toBe('entities/userprofile/ui');
+            expect(vars.name).toBe('UserProfile');
+            expect(vars.entityNameCamel).toBe('userProfile');
+        });
+
+        it('should handle non-string custom variables', () => {
+            const action: any = {
+                variables: {
+                    count: 42,
+                    enabled: true
+                }
+            };
+            const name = 'User';
+            const vars = actionExecutionModule.prepareActionVariables(action, name, {});
+
+            expect(vars.count).toBe(42);
+            expect(vars.enabled).toBe(true);
         });
     });
 });

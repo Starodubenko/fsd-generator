@@ -80,6 +80,6 @@ describe('Integration: Variable Cascading Scenarios', () => {
 
         expect(vars.name).toBe('');
         expect(vars.componentName).toBe('');
-        expect(Object.keys(vars).length).toBe(2);
+        expect(Object.keys(vars).length).toBe(10);
     });
 });

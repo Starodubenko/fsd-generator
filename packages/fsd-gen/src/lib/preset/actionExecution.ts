@@ -28,7 +28,17 @@ export function prepareActionVariables(
     name: string,
     globalVars: Record<string, any>
 ): Record<string, any> {
-    return prepareTemplateVariables(name, globalVars, action.variables);
+    const baseVars = prepareTemplateVariables(name, globalVars);
+    const actionVars: Record<string, any> = {};
+
+    // Resolve variables within action.variables if they contain tokens
+    if (action.variables) {
+        for (const [key, value] of Object.entries(action.variables)) {
+            actionVars[key] = typeof value === 'string' ? processTemplate(value, baseVars) : value;
+        }
+    }
+
+    return { ...baseVars, ...actionVars };
 }
 
 /**
@@ -60,7 +70,7 @@ export async function executeComponentAction(
         },
     };
 
-    await generateComponent(paths, context, action.template, config.templatesDir);
+    await generateComponent(paths, context, processTemplate(action.template, variables), config.templatesDir);
 }
 
 /**
@@ -92,7 +102,7 @@ export async function executeHookAction(
         },
     };
 
-    await generateHook(paths, context, action.template, config.templatesDir);
+    await generateHook(paths, context, processTemplate(action.template, variables), config.templatesDir);
 }
 
 /**
@@ -124,7 +134,7 @@ export async function executeStylesAction(
         },
     };
 
-    await generateStyles(paths, context, action.template, config.templatesDir);
+    await generateStyles(paths, context, processTemplate(action.template, variables), config.templatesDir);
 }
 
 /**
@@ -194,7 +204,7 @@ export async function executeFileAction(
             },
         };
 
-        const content = await loadFileTemplate(action.template, config.templatesDir);
+        const content = await loadFileTemplate(processTemplate(action.template, variables), config.templatesDir);
         const processed = processTemplate(content, context);
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);

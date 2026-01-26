@@ -204,6 +204,11 @@ export function processTemplate(content: string | ((context: TemplateContext) =>
         return content(variables as TemplateContext);
     }
     return content.replace(/\{\s*\{\s*([\w.]+)\s*\}\s*\}/g, (_, key) => {
+        // First try direct access (supports flat keys with dots like "user.name")
+        if (key in variables) {
+            return String((variables as any)[key] ?? '');
+        }
+        // Fall back to nested resolution
         const value = key.split('.').reduce((obj: any, k: string) => obj && obj[k], variables);
         return String(value ?? '');
     });
