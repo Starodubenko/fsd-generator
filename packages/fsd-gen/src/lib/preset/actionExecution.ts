@@ -76,12 +76,28 @@ export async function executeComponentAction(
     const componentName = processTemplate(action.name || action.slice, variables);
     const sliceName = processTemplate(action.slice, variables);
 
-    const paths = resolveFsdPaths(
-        config.targetDir ?? config.rootDir ?? 'src',
-        action.layer,
-        sliceName,
-        componentName
-    );
+    let paths;
+    if ((action as any).path) {
+        const fullPath = join(
+            config.targetDir ?? config.rootDir ?? 'src',
+            processTemplate((action as any).path, variables)
+        );
+        // Strip extension for componentPath as generateComponent adds its own
+        const pathWithoutExt = fullPath.replace(/\.[^/.]+$/, "");
+        paths = {
+            componentPath: pathWithoutExt,
+            uiPath: dirname(fullPath),
+            slicePath: dirname(dirname(fullPath)), // Fallback slice path
+            layerPath: dirname(dirname(dirname(fullPath))) // Fallback layer path
+        };
+    } else {
+        paths = resolveFsdPaths(
+            config.targetDir ?? config.rootDir ?? 'src',
+            action.layer,
+            sliceName,
+            componentName
+        );
+    }
 
     const context = {
         ...variables,
@@ -90,20 +106,10 @@ export async function executeComponentAction(
         template: {
             componentName,
             sliceName,
-            layer: action.layer,
+            layer: action.layer || '',
         },
     };
 
-    // We try to find the template by literal name first in generateComponent (indirectly via loadTemplate)
-    // But generateComponent takes a single templateOverride string.
-    // To support the "literal first" requirement, we could modify generateComponent, 
-    // or we can just pass the path and have generateComponent/loadTemplate handle the fallback.
-
-    // Actually, let's keep it simple: the user wants to use variables in config.
-    // If action.template is "ui/{{name}}.tsx", and a file "ui/{{name}}.tsx" exists, we use it.
-    // if not, and "ui/User.tsx" exists, we use it.
-
-    // I will modify loadFileTemplate and loadTemplate to try BOTH if tokens are present.
     await generateComponent(paths, context, action.template, config.templatesDir);
 }
 
@@ -118,12 +124,27 @@ export async function executeHookAction(
     const componentName = processTemplate(action.name || action.slice, variables);
     const sliceName = processTemplate(action.slice, variables);
 
-    const paths = resolveFsdPaths(
-        config.targetDir ?? config.rootDir ?? 'src',
-        action.layer,
-        sliceName,
-        componentName
-    );
+    let paths;
+    if ((action as any).path) {
+        const fullPath = join(
+            config.targetDir ?? config.rootDir ?? 'src',
+            processTemplate((action as any).path, variables)
+        );
+        const pathWithoutExt = fullPath.replace(/\.[^/.]+$/, "");
+        paths = {
+            componentPath: pathWithoutExt,
+            uiPath: dirname(fullPath),
+            slicePath: dirname(dirname(fullPath)),
+            layerPath: dirname(dirname(dirname(fullPath)))
+        };
+    } else {
+        paths = resolveFsdPaths(
+            config.targetDir ?? config.rootDir ?? 'src',
+            action.layer,
+            sliceName,
+            componentName
+        );
+    }
 
     const context = {
         ...variables,
@@ -132,7 +153,7 @@ export async function executeHookAction(
         template: {
             componentName,
             sliceName,
-            layer: action.layer,
+            layer: action.layer || '',
         },
     };
 
@@ -150,12 +171,27 @@ export async function executeStylesAction(
     const componentName = processTemplate(action.name || action.slice, variables);
     const sliceName = processTemplate(action.slice, variables);
 
-    const paths = resolveFsdPaths(
-        config.targetDir ?? config.rootDir ?? 'src',
-        action.layer,
-        sliceName,
-        componentName
-    );
+    let paths;
+    if ((action as any).path) {
+        const fullPath = join(
+            config.targetDir ?? config.rootDir ?? 'src',
+            processTemplate((action as any).path, variables)
+        );
+        const pathWithoutExt = fullPath.replace(/\.[^/.]+$/, "");
+        paths = {
+            componentPath: pathWithoutExt,
+            uiPath: dirname(fullPath),
+            slicePath: dirname(dirname(fullPath)),
+            layerPath: dirname(dirname(dirname(fullPath)))
+        };
+    } else {
+        paths = resolveFsdPaths(
+            config.targetDir ?? config.rootDir ?? 'src',
+            action.layer,
+            sliceName,
+            componentName
+        );
+    }
 
     const context = {
         ...variables,
@@ -164,7 +200,7 @@ export async function executeStylesAction(
         template: {
             componentName,
             sliceName,
-            layer: action.layer,
+            layer: action.layer || '',
         },
     };
 

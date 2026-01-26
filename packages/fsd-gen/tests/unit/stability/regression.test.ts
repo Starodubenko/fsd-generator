@@ -68,4 +68,55 @@ describe('Regression Tests: Found Bugs & Stability', () => {
                 .resolves.not.toThrow();
         });
     });
+    describe('Action Execution (Custom Paths)', () => {
+        it('should support custom path in executeComponentAction bypassing FSD validation', async () => {
+            const { executeComponentAction } = await import('../../../src/lib/preset/actionExecution.js');
+            const generateModule = await import('../../../src/lib/generators/generate.js');
+            const spy = vi.spyOn(generateModule, 'generateComponent').mockResolvedValue(undefined as any);
+
+            const action = {
+                type: ACTION_TYPES.COMPONENT,
+                path: 'custom/path/{{name}}.tsx',
+                template: 't'
+            };
+            const config = { targetDir: 'out' };
+            const variables = { name: 'Test' };
+
+            await executeComponentAction(action as any, variables, config as any);
+
+            expect(spy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    componentPath: expect.stringContaining('out/custom/path/Test')
+                }),
+                expect.any(Object),
+                't',
+                undefined
+            );
+        });
+
+        it('should support custom path in executeHookAction bypassing FSD validation', async () => {
+            const { executeHookAction } = await import('../../../src/lib/preset/actionExecution.js');
+            const generateModule = await import('../../../src/lib/generators/generate.js');
+            const spy = vi.spyOn(generateModule, 'generateHook').mockResolvedValue(undefined as any);
+
+            const action = {
+                type: ACTION_TYPES.HOOK,
+                path: 'hooks/{{name}}.ts',
+                template: 't'
+            };
+            const config = { targetDir: 'out' };
+            const variables = { name: 'useData' };
+
+            await executeHookAction(action as any, variables, config as any);
+
+            expect(spy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    componentPath: expect.stringContaining('out/hooks/useData')
+                }),
+                expect.any(Object),
+                't',
+                undefined
+            );
+        });
+    });
 });
