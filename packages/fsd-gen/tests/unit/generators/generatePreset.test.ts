@@ -93,7 +93,7 @@ describe('generatePreset', () => {
         await generatePreset('table', 'User');
 
         expect(injectRouteModule.injectRoute).toHaveBeenCalledWith(expect.objectContaining({
-            rootDir: 'app',
+            targetDir: 'app',
             path: '/custom',
             componentName: 'CustomPage',
             importPath: '@/custom',
@@ -113,7 +113,7 @@ describe('generatePreset', () => {
         await generatePreset('table', 'User');
 
         expect(injectRouteModule.injectRoute).toHaveBeenCalledWith(expect.objectContaining({
-            rootDir: 'src'
+            targetDir: 'src'
         }));
     });
 

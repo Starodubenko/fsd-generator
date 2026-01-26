@@ -29,12 +29,13 @@ describe('handleRouteInjection variables', () => {
             }
         ];
 
-        const config: any = { rootDir: 'src' };
+        const config: any = { targetDir: 'custom-target', rootDir: 'src' };
         const globalVars = {};
 
         await handleRouteInjection(presetConfig, actions, 'User', globalVars, config);
 
         expect(injectRouteModule.injectRoute).toHaveBeenCalledWith(expect.objectContaining({
+            targetDir: 'custom-target',
             path: '/users',
             componentName: 'UserList',
             importPath: '@/pages/User'

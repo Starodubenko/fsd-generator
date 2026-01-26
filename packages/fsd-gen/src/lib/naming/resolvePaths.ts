@@ -57,12 +57,13 @@ export function buildComponentPath(uiPath: string, componentName: string): strin
  * Orchestrates building individual path segments
  */
 export function resolveFsdPaths(
-    rootDir: string,
+    rootDir: string = 'src',
     layer: string,
     slice: string,
     componentName: string
 ): FsdPaths {
-    const layerPath = buildLayerPath(rootDir, layer);
+    const finalRootDir = rootDir ?? 'src';
+    const layerPath = buildLayerPath(finalRootDir, layer);
     const slicePath = buildSlicePath(layerPath, slice);
     const uiPath = buildUiPath(slicePath, layer);
     const componentPath = buildComponentPath(uiPath, componentName);

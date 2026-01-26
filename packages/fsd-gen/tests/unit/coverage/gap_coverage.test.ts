@@ -57,7 +57,7 @@ describe('Coverage Gap Filling', () => {
 
     describe('injectRoute Edge Cases', () => {
         const defaultOptions = {
-            rootDir: 'src',
+            targetDir: 'src',
             path: '/test',
             importPath: '@pages/Test',
             componentName: 'TestPage'

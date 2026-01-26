@@ -8,8 +8,8 @@ import { join } from 'path';
 import { ROUTING } from '../constants.js';
 
 export interface RouteInjectionOptions {
-    /** Root directory where App.tsx is located */
-    rootDir: string;
+    /** Target directory where App.tsx is located (usually src or targetDir) */
+    targetDir: string;
     /** Route path (e.g., '/test') */
     path: string;
     /** Import path for the page component (e.g., '@pages/TestPage') */
@@ -27,8 +27,14 @@ import { readFile, writeFile } from 'fs/promises';
  * Inject a route into App.tsx
  */
 export async function injectRoute(options: RouteInjectionOptions): Promise<void> {
-    const { rootDir, path, importPath, componentName, appFile = ROUTING.APP_FILE } = options;
-    const appFilePath = join(rootDir, appFile);
+    const { targetDir, path, importPath, componentName, appFile = ROUTING.APP_FILE } = options;
+
+    if (!targetDir || !path || !importPath) {
+        console.error('❌ Missing required routing options:', { targetDir, path, importPath });
+        throw new Error(`Missing required routing options. targetDir: ${targetDir}, path: ${path}, importPath: ${importPath}`);
+    }
+
+    const appFilePath = join(targetDir, appFile);
 
     try {
         // Read App.tsx

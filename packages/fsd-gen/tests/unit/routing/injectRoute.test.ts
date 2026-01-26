@@ -15,7 +15,7 @@ describe('injectRoute', () => {
         vi.mocked(readFile).mockResolvedValue(content);
 
         await injectRoute({
-            rootDir: 'src',
+            targetDir: 'src',
             path: '/test',
             componentName: 'TestPage',
             importPath: '@pages/TestPage'
@@ -32,7 +32,7 @@ describe('injectRoute', () => {
         vi.mocked(readFile).mockResolvedValue(content);
         const spy = vi.spyOn(console, 'log').mockImplementation(() => { });
 
-        await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
+        await injectRoute({ targetDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
         expect(spy).toHaveBeenCalledWith(expect.stringContaining('Route for path "/test" already exists'));
         expect(writeFile).not.toHaveBeenCalled();
@@ -44,7 +44,7 @@ describe('injectRoute', () => {
         vi.mocked(readFile).mockResolvedValue(content);
         const spy = vi.spyOn(console, 'log').mockImplementation(() => { });
 
-        await injectRoute({ rootDir: 'src', path: '/new', componentName: 'Test', importPath: '@pages/Test' });
+        await injectRoute({ targetDir: 'src', path: '/new', componentName: 'Test', importPath: '@pages/Test' });
 
         expect(spy).toHaveBeenCalledWith(expect.stringContaining('Import for Test already exists'));
         expect(writeFile).toHaveBeenCalled(); // Still injects the route
@@ -55,7 +55,7 @@ describe('injectRoute', () => {
         const content = `${ROUTING.MARKER}`;
         vi.mocked(readFile).mockResolvedValue(content);
 
-        await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
+        await injectRoute({ targetDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
         expect(writeFile).toHaveBeenCalled();
         const writtenContent = vi.mocked(writeFile).mock.calls[0][1] as string;
@@ -66,7 +66,7 @@ describe('injectRoute', () => {
         vi.mocked(readFile).mockResolvedValue('no marker here');
         const spy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-        await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
+        await injectRoute({ targetDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
         expect(spy).toHaveBeenCalledWith(expect.stringContaining('comment not found in src/App.tsx'));
         expect(writeFile).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe('injectRoute', () => {
         vi.mocked(readFile).mockRejectedValue({ code: 'ENOENT' });
         const spy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
-        await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
+        await injectRoute({ targetDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
         expect(spy).toHaveBeenCalledWith(expect.stringContaining('Routing target file not found: src/App.tsx'));
         spy.mockRestore();
@@ -85,6 +85,6 @@ describe('injectRoute', () => {
 
     it('should throw other errors', async () => {
         vi.mocked(readFile).mockRejectedValue(new Error('boom'));
-        await expect(injectRoute({ rootDir: 'src', path: '/t', componentName: 'C', importPath: 'I' })).rejects.toThrow('boom');
+        await expect(injectRoute({ targetDir: 'src', path: '/t', componentName: 'C', importPath: 'I' })).rejects.toThrow('boom');
     });
 });

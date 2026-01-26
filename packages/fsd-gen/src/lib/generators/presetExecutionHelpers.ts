@@ -81,7 +81,7 @@ export async function handleRouteInjection(
         return;
     }
 
-    const rootDir = config.rootDir || 'src';
+    const targetDir = config.targetDir || config.rootDir || 'src';
 
     for (const pageAction of pageActions) {
         const variables = prepareTemplateVariables(name, globalVars, pageAction.variables);
@@ -98,7 +98,7 @@ export async function handleRouteInjection(
         const routePath = processTemplate(presetConfig.routing.path || '', variables);
 
         await injectRoute({
-            rootDir,
+            targetDir,
             path: routePath,
             importPath,
             componentName,
