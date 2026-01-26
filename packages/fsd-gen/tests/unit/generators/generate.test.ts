@@ -164,6 +164,8 @@ describe('generate', () => {
 
             await generateHook(paths as any, context as any, templatePath);
 
+            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('', templatePath, '.fsd-templates', expect.any(Object));
+
             expect(fs.writeFile).toHaveBeenCalledWith('src/entities/User/ui/useUser.ts', 'processed hook content');
             expect(updateBarrels.updateBarrel).toHaveBeenCalledWith('src/entities/User/ui', 'useUser', 'useUser');
             expect(updateBarrels.updateBarrel).toHaveBeenCalledWith('src/entities/User', 'ui', 'ui');
@@ -195,6 +197,8 @@ describe('generate', () => {
             vi.mocked(templateLoader.processTemplate).mockReturnValue('processed styles content');
 
             await generateStyles(paths as any, context as any, templatePath);
+
+            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('', templatePath, '.fsd-templates', expect.any(Object));
 
             expect(fs.writeFile).toHaveBeenCalledWith('src/features/Auth/ui/LoginForm.styles.ts', 'processed styles content');
             expect(updateBarrels.updateBarrel).toHaveBeenCalledWith('src/features/Auth/ui', 'LoginForm', 'LoginForm');
@@ -245,7 +249,7 @@ describe('generate', () => {
                 } as any
             );
 
-            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('shared', expect.any(String), 't');
+            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('shared', expect.any(String), 't', expect.any(Object));
         });
 
         it('should generate component and styles and update barrels', async () => {
@@ -290,7 +294,7 @@ describe('generate', () => {
                 'custom/template'
             );
 
-            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('', 'custom/template', 't');
+            expect(templateLoader.loadTemplate).toHaveBeenCalledWith('', 'custom/template', 't', expect.any(Object));
         });
     });
 });

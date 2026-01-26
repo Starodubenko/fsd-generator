@@ -42,6 +42,30 @@ export function prepareActionVariables(
 }
 
 /**
+ * Helper to resolve and load templates, supporting both literal and resolved paths
+ */
+async function getEffectiveTemplate(
+    templatePath: string,
+    variables: Record<string, any>,
+    templatesDir?: string
+): Promise<string> {
+    // We try to resolve variables in the template path, but we also want to support
+    // literal template paths that contain tokens (e.g. {{entityName}}.tsx)
+    // The physical file might be named with tokens!
+
+    // In current implementation, generateComponent etc expect a template name/path.
+    // If we resolve it here, we might miss the physical file.
+    // However, if we don't resolve it, we might miss the dynamic selection.
+
+    // For now, we will return the resolved path BUT if a literal match is found later by 
+    // loadTemplate/loadFileTemplate it should take precedence.
+    // Actually, the loaders already check multiple paths.
+
+    // Let's refine the logic: we want to try literal first, then resolved.
+    return processTemplate(templatePath, variables);
+}
+
+/**
  * Execute a component action (generate a component)
  */
 export async function executeComponentAction(
@@ -70,7 +94,17 @@ export async function executeComponentAction(
         },
     };
 
-    await generateComponent(paths, context, processTemplate(action.template, variables), config.templatesDir);
+    // We try to find the template by literal name first in generateComponent (indirectly via loadTemplate)
+    // But generateComponent takes a single templateOverride string.
+    // To support the "literal first" requirement, we could modify generateComponent, 
+    // or we can just pass the path and have generateComponent/loadTemplate handle the fallback.
+
+    // Actually, let's keep it simple: the user wants to use variables in config.
+    // If action.template is "ui/{{name}}.tsx", and a file "ui/{{name}}.tsx" exists, we use it.
+    // if not, and "ui/User.tsx" exists, we use it.
+
+    // I will modify loadFileTemplate and loadTemplate to try BOTH if tokens are present.
+    await generateComponent(paths, context, action.template, config.templatesDir);
 }
 
 /**
@@ -102,7 +136,7 @@ export async function executeHookAction(
         },
     };
 
-    await generateHook(paths, context, processTemplate(action.template, variables), config.templatesDir);
+    await generateHook(paths, context, action.template, config.templatesDir);
 }
 
 /**
@@ -134,7 +168,7 @@ export async function executeStylesAction(
         },
     };
 
-    await generateStyles(paths, context, processTemplate(action.template, variables), config.templatesDir);
+    await generateStyles(paths, context, action.template, config.templatesDir);
 }
 
 /**
@@ -142,15 +176,29 @@ export async function executeStylesAction(
  */
 export async function loadFileTemplate(
     templatePath: string,
-    customTemplatesDir?: string
+    customTemplatesDir?: string,
+    variables?: Record<string, any>
 ): Promise<string | ((context: TemplateContext) => string)> {
     const internalTemplatesDir = join(__dirname, '../../../templates');
     const pathsToCheck = [];
 
+    // Prioritize literal paths with tokens if they exist on disk
     if (customTemplatesDir) {
         pathsToCheck.push(join(resolve(process.cwd(), customTemplatesDir), templatePath));
     }
     pathsToCheck.push(join(internalTemplatesDir, templatePath));
+
+    // If template contains tokens, also check the resolved path
+    if (variables && templatePath.includes('{{')) {
+        const resolvedPath = processTemplate(templatePath, variables);
+        if (resolvedPath !== templatePath) {
+            if (customTemplatesDir) {
+                pathsToCheck.push(join(resolve(process.cwd(), customTemplatesDir), resolvedPath));
+            }
+            pathsToCheck.push(join(internalTemplatesDir, resolvedPath));
+        }
+    }
+
 
     for (const p of pathsToCheck) {
         try {
@@ -204,7 +252,7 @@ export async function executeFileAction(
             },
         };
 
-        const content = await loadFileTemplate(processTemplate(action.template, variables), config.templatesDir);
+        const content = await loadFileTemplate(action.template, config.templatesDir, variables);
         const processed = processTemplate(content, context);
         await writeFile(targetPath, processed);
         console.log(`Created ${targetPath}`);

@@ -32,7 +32,8 @@ export function resolveTemplateDirs(customTemplatesDir?: string): string[] {
 export async function findTemplateDir(
     layer: string,
     type: string,
-    searchDirs: string[]
+    searchDirs: string[],
+    variables?: Record<string, any>
 ): Promise<string | null> {
     for (const templatesDir of searchDirs) {
         const templateDir = layer
@@ -43,7 +44,21 @@ export async function findTemplateDir(
             await stat(templateDir);
             return templateDir;
         } catch {
-            // Not found in this dir, continue
+            // Not found in this dir, try resolved if tokens are present
+            if (variables && type.includes('{{')) {
+                const resolvedType = processTemplate(type, variables);
+                if (resolvedType !== type) {
+                    const resolvedTemplateDir = layer
+                        ? join(templatesDir, layer, resolvedType)
+                        : join(templatesDir, resolvedType);
+                    try {
+                        await stat(resolvedTemplateDir);
+                        return resolvedTemplateDir;
+                    } catch {
+                        // Continue
+                    }
+                }
+            }
         }
     }
 
@@ -182,10 +197,11 @@ export async function readStylesTemplate(templateDir: string): Promise<string | 
 export async function loadTemplate(
     layer: string,
     type: string = 'ui',
-    customTemplatesDir?: string
+    customTemplatesDir?: string,
+    variables?: Record<string, any>
 ): Promise<{ component: string | ((context: TemplateContext) => string); styles: string | ((context: TemplateContext) => string) }> {
     const searchDirs = resolveTemplateDirs(customTemplatesDir);
-    const templateDir = await findTemplateDir(layer, type, searchDirs);
+    const templateDir = await findTemplateDir(layer, type, searchDirs, variables);
 
     if (!templateDir) {
         console.warn(`Template not found: ${layer}/${type} in paths: ${searchDirs.join(', ')}`);

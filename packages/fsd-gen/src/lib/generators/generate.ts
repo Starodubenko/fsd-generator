@@ -82,7 +82,7 @@ export async function generateHook(
   templatesDir?: string
 ) {
   const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
-  const { component: hookTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir);
+  const { component: hookTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir, context);
 
   const content = processTemplate(hookTemplate, context);
   const hookFile = `${paths.componentPath}${FILE_EXTENSIONS.TYPESCRIPT}`;
@@ -104,7 +104,7 @@ export async function generateStyles(
   templatesDir?: string
 ) {
   const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
-  const { styles: stylesTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir);
+  const { styles: stylesTemplate } = await loadTemplate('', templatePath, effectiveTemplatesDir, context);
 
   const content = processTemplate(stylesTemplate, context);
   const stylesFile = `${paths.componentPath}${FILE_EXTENSIONS.STYLES}`;
@@ -133,7 +133,7 @@ export async function generateComponent(
   const effectiveTemplatesDir = templatesDir || (await loadConfig()).templatesDir;
 
   // Step 3: Load template
-  const { component, styles } = await loadTemplate(layerArg, templatePath, effectiveTemplatesDir);
+  const { component, styles } = await loadTemplate(layerArg, templatePath, effectiveTemplatesDir, context);
 
   // Step 4: Render templates
   const componentContent = processTemplate(component, context);

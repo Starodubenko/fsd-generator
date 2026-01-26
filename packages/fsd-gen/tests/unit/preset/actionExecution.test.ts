@@ -119,7 +119,7 @@ describe('actionExecution', () => {
             expect(generateModule.generateComponent).toHaveBeenCalledWith(
                 expect.any(Object),
                 expect.any(Object),
-                'user.tsx',
+                '{{entityNameCamel}}.tsx',
                 undefined
             );
         });
@@ -195,7 +195,7 @@ describe('actionExecution', () => {
             expect(generateModule.generateHook).toHaveBeenCalledWith(
                 expect.any(Object),
                 expect.any(Object),
-                'useUser.ts',
+                'use{{entityName}}.ts',
                 undefined
             );
         });
@@ -244,15 +244,14 @@ describe('actionExecution', () => {
             vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
 
 
-            // executeFileAction uses processTemplate to resolve the path AND the template name AND the content
-            // We want to capture the context used when processing the CONTENT
-            // The first call is for path resolution, second for template name, third for content
+            // executeFileAction uses processTemplate to resolve the path AND the content (template name resolution is now inside loadFileTemplate)
+            // The first call is for path resolution, second for content
             await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, commonConfig);
 
-            expect(templateLoader.processTemplate).toHaveBeenCalledTimes(3);
+            expect(templateLoader.processTemplate).toHaveBeenCalledTimes(2);
 
-            // The third call to processTemplate should receive the context
-            const contentCallArgs = vi.mocked(templateLoader.processTemplate).mock.calls[2];
+            // The second call to processTemplate should receive the context
+            const contentCallArgs = vi.mocked(templateLoader.processTemplate).mock.calls[1];
             const context = contentCallArgs[1] as GeneratorContext;
 
             // Verify template keys
@@ -276,10 +275,10 @@ describe('actionExecution', () => {
             const variables = { entityNameCamel: 'user', componentName: 'User', name: 'User' };
             const config: FsdGenConfig = { rootDir: 'src' };
 
-            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('template content');
             const fsMock = await import('node:fs/promises');
             vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
             vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+            vi.mocked(fsMock.readFile).mockResolvedValue('template content');
 
             await executeFileAction(action, variables, config);
 
@@ -345,10 +344,10 @@ describe('actionExecution', () => {
                 templatesDir: '.templates'
             };
 
-            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('export * from "./User";');
             const fsMock = await import('node:fs/promises');
             vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
             vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+            vi.mocked(fsMock.readFile).mockResolvedValue('export * from "./User";');
 
             await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, configWithTargetDir);
 
@@ -374,10 +373,10 @@ describe('actionExecution', () => {
                 templatesDir: '.templates'
             };
 
-            vi.spyOn(actionExecutionModule, 'loadFileTemplate').mockResolvedValue('export * from "./User";');
             const fsMock = await import('node:fs/promises');
             vi.mocked(fsMock.mkdir).mockResolvedValue(undefined);
             vi.mocked(fsMock.writeFile).mockResolvedValue(undefined);
+            vi.mocked(fsMock.readFile).mockResolvedValue('export * from "./User";');
 
             await executeFileAction(action, { ...commonVariables, componentName: 'User', sliceName: 'User' }, configWithoutTargetDir);
 
