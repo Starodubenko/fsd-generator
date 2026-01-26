@@ -24,6 +24,11 @@ export function prepareTemplateVariables(
         nameLower: name.toLowerCase(),
         nameUpper: name.toUpperCase(),
         nameKebab: name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase(),
+        entityName: name,
+        entityNameCamel: name.charAt(0).toLowerCase() + name.slice(1),
+        entityNameLower: name.toLowerCase(),
+        entityNameUpper: name.toUpperCase(),
+        entityNameKebab: name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase(),
         ...globalVars,
         ...actionVars
     };

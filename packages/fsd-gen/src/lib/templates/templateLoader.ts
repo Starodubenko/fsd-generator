@@ -203,7 +203,10 @@ export function processTemplate(content: string | ((context: TemplateContext) =>
     if (typeof content === 'function') {
         return content(variables as TemplateContext);
     }
-    return content.replace(/\{\s*\{\s*(\w+)\s*\}\s*\}/g, (_, key) => String(variables[key] ?? ''));
+    return content.replace(/\{\s*\{\s*([\w.]+)\s*\}\s*\}/g, (_, key) => {
+        const value = key.split('.').reduce((obj: any, k: string) => obj && obj[k], variables);
+        return String(value ?? '');
+    });
 }
 
 export async function listPresets(customTemplatesDir?: string): Promise<string[]> {

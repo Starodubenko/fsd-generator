@@ -260,5 +260,12 @@ describe('templateLoader', () => {
             expect(result).toBe(`Value: ${longValue}`);
             expect(result.length).toBe(7 + longValue.length);
         });
+
+        it('should handle variables with dot notation', () => {
+            const template = 'Hello {{user.name}}!';
+            const variables = { 'user.name': 'Alice' };
+            const result = processTemplate(template, variables);
+            expect(result).toBe('Hello Alice!');
+        });
     });
 });

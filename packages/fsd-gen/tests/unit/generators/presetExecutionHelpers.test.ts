@@ -11,12 +11,17 @@ import * as routing from '../../../src/lib/routing/injectRoute.js';
 describe('presetExecutionHelpers', () => {
     describe('prepareTemplateVariables', () => {
         it('should generate all naming variations', () => {
-            const vars = prepareTemplateVariables('UserProfile', { theme: 'dark' }, { role: 'admin' });
+            const vars = prepareTemplateVariables('UserProfile', { theme: 'dark' }, { role: 'admin' }) as any;
             expect(vars.name).toBe('UserProfile');
             expect(vars.componentName).toBe('UserProfile');
             expect(vars.nameLower).toBe('userprofile');
             expect(vars.nameUpper).toBe('USERPROFILE');
             expect(vars.nameKebab).toBe('user-profile');
+            expect(vars.entityName).toBe('UserProfile');
+            expect(vars.entityNameCamel).toBe('userProfile');
+            expect(vars.entityNameLower).toBe('userprofile');
+            expect(vars.entityNameUpper).toBe('USERPROFILE');
+            expect(vars.entityNameKebab).toBe('user-profile');
             expect(vars.theme).toBe('dark');
             expect(vars.role).toBe('admin');
         });
