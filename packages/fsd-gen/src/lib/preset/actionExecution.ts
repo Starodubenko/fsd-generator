@@ -12,6 +12,7 @@ import { updateBarrel } from '../barrels/updateBarrels.js';
 import { ACTION_TYPES, FILE_EXTENSIONS } from '../constants.js';
 import { generateComponent, generateHook, generateStyles } from '../generators/generate.js';
 import { resolveFsdPaths } from '../naming/resolvePaths.js';
+import { prepareTemplateVariables } from '../generators/presetExecutionHelpers.js';
 import { processTemplate } from '../templates/templateLoader.js';
 import { PresetAction, PresetComponentAction, PresetFileAction, FsdGenConfig, TemplateContext } from '../../config/types.js';
 
@@ -27,12 +28,7 @@ export function prepareActionVariables(
     name: string,
     globalVars: Record<string, any>
 ): Record<string, any> {
-    return {
-        name,
-        componentName: name,
-        ...globalVars,
-        ...action.variables
-    };
+    return prepareTemplateVariables(name, globalVars, action.variables);
 }
 
 /**
