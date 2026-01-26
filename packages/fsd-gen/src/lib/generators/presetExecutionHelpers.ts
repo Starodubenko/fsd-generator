@@ -87,9 +87,14 @@ export async function handleRouteInjection(
         const variables = prepareTemplateVariables(name, globalVars, pageAction.variables);
 
         const pageSlice = processTemplate(pageAction.slice, variables);
-        const componentName = presetConfig.routing.componentName ||
-            processTemplate(pageAction.name || pageAction.slice, variables);
-        const importPath = presetConfig.routing.importPath || `@pages/${pageSlice}`;
+        const componentName = processTemplate(
+            presetConfig.routing.componentName || (pageAction.name || pageAction.slice),
+            variables
+        );
+        const importPath = processTemplate(
+            presetConfig.routing.importPath || `@pages/${pageSlice}`,
+            variables
+        );
         const routePath = processTemplate(presetConfig.routing.path, variables);
 
         await injectRoute({
@@ -97,7 +102,7 @@ export async function handleRouteInjection(
             path: routePath,
             importPath,
             componentName,
-            appFile: presetConfig.routing.appFile
+            appFile: presetConfig.routing.appFile ? processTemplate(presetConfig.routing.appFile, variables) : undefined
         });
     }
 }
