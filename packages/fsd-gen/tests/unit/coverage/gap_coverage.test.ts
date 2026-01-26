@@ -70,7 +70,7 @@ describe('Coverage Gap Filling', () => {
 
             await injectRoute(defaultOptions);
 
-            expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('App.tsx not found'));
+            expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Routing target file not found: src/App.tsx'));
         });
 
         it('should rethrow non-ENOENT errors', async () => {

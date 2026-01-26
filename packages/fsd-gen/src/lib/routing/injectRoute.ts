@@ -36,8 +36,8 @@ export async function injectRoute(options: RouteInjectionOptions): Promise<void>
 
         // Check if route injection point exists
         if (!content.includes(ROUTING.MARKER)) {
-            console.warn(`⚠️  Warning: ${ROUTING.MARKER} comment not found in ${ROUTING.APP_FILE}`);
-            console.warn('   Route was not injected automatically.');
+            console.warn(`⚠️  Warning: ${ROUTING.MARKER} comment not found in ${appFilePath}`);
+            console.warn(`   Route was not injected automatically into ${appFilePath}.`);
             return;
         }
 
@@ -84,8 +84,9 @@ export async function injectRoute(options: RouteInjectionOptions): Promise<void>
         console.log(`✅ Injected route "${path}" -> ${componentName}`);
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            console.warn('⚠️  Warning: App.tsx not found, route injection skipped');
+            console.warn(`⚠️  Warning: Routing target file not found: ${appFilePath}. Route injection skipped.`);
         } else {
+            console.error(`❌ Error while injecting route into ${appFilePath}:`, error);
             throw error;
         }
     }

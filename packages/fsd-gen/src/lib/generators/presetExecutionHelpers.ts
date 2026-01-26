@@ -86,16 +86,16 @@ export async function handleRouteInjection(
     for (const pageAction of pageActions) {
         const variables = prepareTemplateVariables(name, globalVars, pageAction.variables);
 
-        const pageSlice = processTemplate(pageAction.slice, variables);
+        const pageSlice = processTemplate(pageAction.slice || '', variables);
         const componentName = processTemplate(
-            presetConfig.routing.componentName || (pageAction.name || pageAction.slice),
+            presetConfig.routing.componentName || pageAction.name || pageAction.slice || '',
             variables
         );
         const importPath = processTemplate(
-            presetConfig.routing.importPath || `@pages/${pageSlice}`,
+            presetConfig.routing.importPath || (pageSlice ? `@pages/${pageSlice}` : ''),
             variables
         );
-        const routePath = processTemplate(presetConfig.routing.path, variables);
+        const routePath = processTemplate(presetConfig.routing.path || '', variables);
 
         await injectRoute({
             rootDir,

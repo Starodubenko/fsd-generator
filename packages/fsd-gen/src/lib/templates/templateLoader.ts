@@ -204,8 +204,9 @@ export async function loadTemplate(
     const templateDir = await findTemplateDir(layer, type, searchDirs, variables);
 
     if (!templateDir) {
-        console.warn(`Template not found: ${layer}/${type} in paths: ${searchDirs.join(', ')}`);
-        throw new Error(`Template not found: ${layer}/${type}`);
+        const errorMsg = `Template not found for ${layer}/${type}. Checked paths: ${searchDirs.join(', ')}`;
+        console.warn(`⚠️  ${errorMsg}`);
+        throw new Error(errorMsg);
     }
 
     const component = await readComponentTemplate(templateDir);
@@ -216,6 +217,7 @@ export async function loadTemplate(
 }
 
 export function processTemplate(content: string | ((context: TemplateContext) => string), variables: Record<string, any> | TemplateContext): string {
+    if (!content) return '';
     if (typeof content === 'function') {
         return content(variables as TemplateContext);
     }

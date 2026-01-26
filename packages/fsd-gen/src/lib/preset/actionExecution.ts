@@ -223,7 +223,9 @@ export async function loadFileTemplate(
         }
     }
 
-    throw new Error(`Could not find file template: ${templatePath}`);
+    const errorMsg = `Could not find file template: ${templatePath}. Checked locations: ${pathsToCheck.join(', ')}`;
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
 }
 
 /**

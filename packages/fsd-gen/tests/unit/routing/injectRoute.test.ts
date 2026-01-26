@@ -68,7 +68,7 @@ describe('injectRoute', () => {
 
         await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
-        expect(spy).toHaveBeenCalledWith(expect.stringContaining('comment not found in App.tsx'));
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining('comment not found in src/App.tsx'));
         expect(writeFile).not.toHaveBeenCalled();
         spy.mockRestore();
     });
@@ -79,7 +79,7 @@ describe('injectRoute', () => {
 
         await injectRoute({ rootDir: 'src', path: '/test', componentName: 'Test', importPath: '@pages/Test' });
 
-        expect(spy).toHaveBeenCalledWith(expect.stringContaining('App.tsx not found'));
+        expect(spy).toHaveBeenCalledWith(expect.stringContaining('Routing target file not found: src/App.tsx'));
         spy.mockRestore();
     });
 
