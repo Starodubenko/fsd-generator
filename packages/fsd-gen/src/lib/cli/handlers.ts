@@ -44,7 +44,7 @@ export async function handleGenerate(layer?: string, slice?: string, name?: stri
 
     const derivedName = name || basename(finalSlice);
     const componentName = toPascalCase(derivedName);
-    const paths = resolveFsdPaths(validation.config.rootDir, finalLayer, finalSlice, componentName);
+    const paths = resolveFsdPaths(config.targetDir ?? validation.config.rootDir, finalLayer, finalSlice, componentName);
     const helpers = createPresetHelpers(finalSlice, config);
 
     await generateComponent(paths, {

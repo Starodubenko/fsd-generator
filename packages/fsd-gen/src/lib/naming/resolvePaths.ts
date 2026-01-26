@@ -25,6 +25,9 @@ export function getLayerPlural(layer: string): string {
  * Build the full path to the layer directory
  */
 export function buildLayerPath(rootDir: string, layer: string): string {
+    if (!layer) {
+        throw new Error('Layer is required for FSD path resolution');
+    }
     const layerDir = getLayerPlural(layer);
     return join(rootDir, layerDir);
 }
@@ -57,12 +60,15 @@ export function buildComponentPath(uiPath: string, componentName: string): strin
  * Orchestrates building individual path segments
  */
 export function resolveFsdPaths(
-    rootDir: string = 'src',
+    targetDir: string = 'src',
     layer: string,
     slice: string,
     componentName: string
 ): FsdPaths {
-    const finalRootDir = rootDir ?? 'src';
+    if (!layer) {
+        throw new Error(`Layer is required to resolve paths for component "${componentName}" in slice "${slice}"`);
+    }
+    const finalRootDir = targetDir ?? 'src';
     const layerPath = buildLayerPath(finalRootDir, layer);
     const slicePath = buildSlicePath(layerPath, slice);
     const uiPath = buildUiPath(slicePath, layer);

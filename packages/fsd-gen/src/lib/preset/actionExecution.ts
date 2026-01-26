@@ -77,7 +77,7 @@ export async function executeComponentAction(
     const sliceName = processTemplate(action.slice, variables);
 
     const paths = resolveFsdPaths(
-        config.rootDir ?? 'src',
+        config.targetDir ?? config.rootDir ?? 'src',
         action.layer,
         sliceName,
         componentName
@@ -119,7 +119,7 @@ export async function executeHookAction(
     const sliceName = processTemplate(action.slice, variables);
 
     const paths = resolveFsdPaths(
-        config.rootDir ?? 'src',
+        config.targetDir ?? config.rootDir ?? 'src',
         action.layer,
         sliceName,
         componentName
@@ -151,7 +151,7 @@ export async function executeStylesAction(
     const sliceName = processTemplate(action.slice, variables);
 
     const paths = resolveFsdPaths(
-        config.rootDir ?? 'src',
+        config.targetDir ?? config.rootDir ?? 'src',
         action.layer,
         sliceName,
         componentName

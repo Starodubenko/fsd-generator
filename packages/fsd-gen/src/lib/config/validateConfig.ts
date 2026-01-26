@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 const configSchema = z.object({
     rootDir: z.string().optional(),
+    targetDir: z.string().optional(),
     aliases: z.record(z.string(), z.string()).optional(),
     naming: z.enum(['error', 'warn', 'autoFix']).optional(),
 });
