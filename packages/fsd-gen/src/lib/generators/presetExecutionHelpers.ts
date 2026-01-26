@@ -1,4 +1,4 @@
-
+import { join, basename } from 'path';
 import { DISCOVERY_MODES, ACTION_TYPES, FSD_LAYERS } from '../constants.js';
 import { discoverTemplates } from '../preset/presetDiscovery.js';
 import { processTemplate } from '../templates/templateLoader.js';
@@ -73,28 +73,39 @@ export async function handleRouteInjection(
     }
 
     const pageActions = actions.filter(action =>
-        action.type === ACTION_TYPES.COMPONENT && action.layer === FSD_LAYERS.PAGE
-    ) as PresetComponentAction[];
+        (action as any).layer === FSD_LAYERS.PAGE
+    );
 
     if (pageActions.length === 0) {
-        console.warn('⚠️  Warning: Routing config provided but no page template found');
+        console.warn('⚠️  Warning: Routing config provided but no page template found in page layer among actions');
         return;
     }
 
     const targetDir = config.targetDir || config.rootDir || 'src';
 
     for (const pageAction of pageActions) {
-        const variables = prepareTemplateVariables(name, globalVars, pageAction.variables);
+        const variables = prepareTemplateVariables(name, globalVars, (pageAction as any).variables);
 
-        const pageSlice = processTemplate(pageAction.slice || '', variables);
+        const pageSlice = processTemplate((pageAction as any).slice || '', variables);
+
+        // Use path to derive name if slice/name are missing
+        let derivedPageName = (pageAction as any).name || (pageAction as any).slice;
+        if (!derivedPageName && (pageAction as any).path) {
+            const rawPath = (pageAction as any).path;
+            const filename = basename(rawPath);
+            derivedPageName = filename.replace(/\.[^/.]+$/, ""); // Strip extension
+        }
+
         const componentName = processTemplate(
-            presetConfig.routing.componentName || pageAction.name || pageAction.slice || '',
+            presetConfig.routing.componentName || derivedPageName || '',
             variables
         );
+
         const importPath = processTemplate(
             presetConfig.routing.importPath || (pageSlice ? `@pages/${pageSlice}` : ''),
             variables
         );
+
         const routePath = processTemplate(presetConfig.routing.path || '', variables);
 
         await injectRoute({

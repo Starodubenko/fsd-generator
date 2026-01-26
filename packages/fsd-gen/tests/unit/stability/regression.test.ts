@@ -94,6 +94,33 @@ describe('Regression Tests: Found Bugs & Stability', () => {
             );
         });
 
+        it('should support custom path in executeComponentAction bypassing FSD validation even with missing slice/name', async () => {
+            const { executeComponentAction } = await import('../../../src/lib/preset/actionExecution.js');
+            const generateModule = await import('../../../src/lib/generators/generate.js');
+            const spy = vi.spyOn(generateModule, 'generateComponent').mockResolvedValue(undefined as any);
+
+            const action = {
+                type: ACTION_TYPES.COMPONENT,
+                path: 'pages/{{name}}Page/{{name}}.tsx',
+                template: 't',
+                layer: 'page'
+            };
+            const config = { targetDir: 'out' };
+            const variables = { name: 'User' };
+
+            await expect(executeComponentAction(action as any, variables, config as any))
+                .resolves.not.toThrow();
+
+            expect(spy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    componentPath: expect.stringContaining('out/pages/UserPage/User')
+                }),
+                expect.any(Object),
+                't',
+                undefined
+            );
+        });
+
         it('should support custom path in executeHookAction bypassing FSD validation', async () => {
             const { executeHookAction } = await import('../../../src/lib/preset/actionExecution.js');
             const generateModule = await import('../../../src/lib/generators/generate.js');
